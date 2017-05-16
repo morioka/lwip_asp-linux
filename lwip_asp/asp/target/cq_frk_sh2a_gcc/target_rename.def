@@ -1,0 +1,8 @@
+INCLUDE "sh12a_gcc/prc"
+
+# target_config.c
+hew_io_sim_putc
+hew_io_sim_snd_chr
+hew_io_sim_rcv_chr
+target_initialize
+target_exit

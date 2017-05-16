@@ -1,0 +1,690 @@
+/*
+ *  TOPPERS/ASP Kernel
+ *      Toyohashi Open Platform for Embedded Real-Time Systems/
+ *      Advanced Standard Profile Kernel
+ * 
+ *  Copyright (C) 2008-2011 by Embedded and Real-Time Systems Laboratory
+ *              Graduate School of Information Science, Nagoya Univ., JAPAN
+ * 
+ *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
+ *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
+ *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
+ *  (1) 本ソフトウェアをソースコードの形で利用する場合には，上記の著作
+ *      権表示，この利用条件および下記の無保証規定が，そのままの形でソー
+ *      スコード中に含まれていること．
+ *  (2) 本ソフトウェアを，ライブラリ形式など，他のソフトウェア開発に使
+ *      用できる形で再配布する場合には，再配布に伴うドキュメント（利用
+ *      者マニュアルなど）に，上記の著作権表示，この利用条件および下記
+ *      の無保証規定を掲載すること．
+ *  (3) 本ソフトウェアを，機器に組み込むなど，他のソフトウェア開発に使
+ *      用できない形で再配布する場合には，次のいずれかの条件を満たすこ
+ *      と．
+ *    (a) 再配布に伴うドキュメント（利用者マニュアルなど）に，上記の著
+ *        作権表示，この利用条件および下記の無保証規定を掲載すること．
+ *    (b) 再配布の形態を，別に定める方法によって，TOPPERSプロジェクトに
+ *        報告すること．
+ *  (4) 本ソフトウェアの利用により直接的または間接的に生じるいかなる損
+ *      害からも，上記著作権者およびTOPPERSプロジェクトを免責すること．
+ *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
+ *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
+ *      免責すること．
+ * 
+ *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
+ *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
+ *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
+ *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
+ *  の責任を負わない．
+ * 
+ */
+
+#ifndef TOPPERS_FM3_MB9BXXX_H
+#define TOPPERS_FM3_MB9BXXX_H
+
+#include <sil.h>
+
+/*
+ *  システムクロックの定義（発振子周波数4MHz）
+ */
+#define SystemFrequency	144000000
+#define SysFreHCLK		144000000	/* HCLK = MasterClock / 1 */
+#define SysFrePCLK0		72000000	/* PCLK0 = HCLK / 2 */
+#define SysFrePCLK1		72000000	/* PCLK1 = HCLK / 2 */
+#define SysFrePCLK2		72000000	/* PCLK2 = HCLK / 2 */
+#define SysFreTPIU		0			/* TPIUCLK : Disable */
+
+#define SYS_CLOCK		(SystemFrequency)
+
+/*
+ *  割込み番号の最大値
+ */
+#define TMAX_INTNO   (16 + 47)
+
+/*
+ *  割込み優先度のビット幅
+ */
+#define TBITW_IPRI     4
+
+/*
+ *  割込み優先度ビット幅中のサブ優先度のビット幅
+ */
+#define TBITW_SUBIPRI  0
+
+/*
+ *  割込みベクタ番号定義
+ */
+#define IRQ_VECTOR_CSV			(16 + 0)
+#define IRQ_VECTOR_SWDT			(16 + 1)
+#define IRQ_VECTOR_LVD			(16 + 2)
+#define IRQ_VECTOR_WFG			(16 + 3)
+#define IRQ_VECTOR_EXINT0_7		(16 + 4)
+#define IRQ_VECTOR_EXINT8_31	(16 + 5)
+#define IRQ_VECTOR_DTIM_QDU		(16 + 6)
+#define IRQ_VECTOR_MFS0RX		(16 + 7)
+#define IRQ_VECTOR_MFS0TX		(16 + 8)
+#define IRQ_VECTOR_MFS1RX		(16 + 9)
+#define IRQ_VECTOR_MFS1TX		(16 + 10)
+#define IRQ_VECTOR_MFS2RX		(16 + 11)
+#define IRQ_VECTOR_MFS2TX		(16 + 12)
+#define IRQ_VECTOR_MFS3RX		(16 + 13)
+#define IRQ_VECTOR_MFS3TX		(16 + 14)
+#define IRQ_VECTOR_MFS4RX		(16 + 15)
+#define IRQ_VECTOR_MFS4TX		(16 + 16)
+#define IRQ_VECTOR_MFS5RX		(16 + 17)
+#define IRQ_VECTOR_MFS5TX		(16 + 18)
+#define IRQ_VECTOR_MFS6RX		(16 + 19)
+#define IRQ_VECTOR_MFS6TX		(16 + 20)
+#define IRQ_VECTOR_MFS7RX		(16 + 21)
+#define IRQ_VECTOR_MFS7TX		(16 + 22)
+#define IRQ_VECTOR_PPG			(16 + 23)
+#define IRQ_VECTOR_OSC_PLL_WC	(16 + 24)
+#define IRQ_VECTOR_ADC0	 		(16 + 25)
+#define IRQ_VECTOR_ADC1 		(16 + 26)
+#define IRQ_VECTOR_ADC2 		(16 + 27)
+#define IRQ_VECTOR_FRTIM		(16 + 28)
+#define IRQ_VECTOR_INCAP		(16 + 29)
+#define IRQ_VECTOR_OUTCOMP		(16 + 30)
+#define IRQ_VECTOR_BTIM0_7		(16 + 31)
+#define IRQ_VECTOR_CAN0_ETH0 	(16 + 32)
+#define IRQ_VECTOR_CAN1_ETH1 	(16 + 33)
+#define IRQ_VECTOR_USBF 		(16 + 34)
+#define IRQ_VECTOR_USBF_USBH	(16 + 35)
+#define IRQ_VECTOR_DMAC0		(16 + 38)
+#define IRQ_VECTOR_DMAC1		(16 + 39)
+#define IRQ_VECTOR_DMAC2		(16 + 40)
+#define IRQ_VECTOR_DMAC3		(16 + 41)
+#define IRQ_VECTOR_DMAC4		(16 + 42)
+#define IRQ_VECTOR_DMAC5		(16 + 43)
+#define IRQ_VECTOR_DMAC6		(16 + 44)
+#define IRQ_VECTOR_DMAC7		(16 + 45)
+#define IRQ_VECTOR_BTIM8_15		(16 + 46)
+
+#define FM3_PERIPH_BASE			(0x40000000UL)
+#define FM3_FLASH_IF_BASE		(FM3_PERIPH_BASE + 0x00000UL)
+#define FM3_CRG_BASE			(FM3_PERIPH_BASE + 0x10000UL)
+#define FM3_HWWDT_BASE			(FM3_PERIPH_BASE + 0x11000UL)
+#define FM3_BT_BASE				(FM3_PERIPH_BASE + 0x25000UL)
+#define FM3_ADC0_BASE			(FM3_PERIPH_BASE + 0x27000UL)
+#define FM3_ADC1_BASE			(FM3_PERIPH_BASE + 0x27100UL)
+#define FM3_ADC2_BASE			(FM3_PERIPH_BASE + 0x27200UL)
+#define FM3_CRTRIM_BASE			(FM3_PERIPH_BASE + 0x2E000UL)
+#define FM3_EXTI_BASE			(FM3_PERIPH_BASE + 0x30000UL)
+#define FM3_INTREQ_BASE			(FM3_PERIPH_BASE + 0x31000UL)
+#define FM3_GPIO_BASE			(FM3_PERIPH_BASE + 0x33000UL)
+#define FM3_MFS0_UART_BASE		(FM3_PERIPH_BASE + 0x38000UL)
+#define FM3_MFS1_UART_BASE		(FM3_PERIPH_BASE + 0x38100UL)
+#define FM3_MFS2_UART_BASE		(FM3_PERIPH_BASE + 0x38200UL)
+#define FM3_MFS3_UART_BASE		(FM3_PERIPH_BASE + 0x38300UL)
+#define FM3_MFS4_UART_BASE		(FM3_PERIPH_BASE + 0x38400UL)
+#define FM3_MFS5_UART_BASE		(FM3_PERIPH_BASE + 0x38500UL)
+#define FM3_MFS6_UART_BASE		(FM3_PERIPH_BASE + 0x38600UL)
+#define FM3_MFS7_UART_BASE		(FM3_PERIPH_BASE + 0x38700UL)
+#define FM3_EXTBUS_BASE			(FM3_PERIPH_BASE + 0x3F000UL)
+#define FM3_DMAC_BASE			(FM3_PERIPH_BASE + 0x60000UL)
+
+#define BITBAND(a, b)			((volatile uint32_t*)(0x42000000UL + (a - FM3_PERIPH_BASE) * 32 + b * 4))
+
+#define FM3_FLASH_IF_CRTRMM		(FM3_FLASH_IF_BASE + 0x100)
+
+#define FM3_CRG_SCM_CTL			(FM3_CRG_BASE + 0x00)
+#define FM3_CRG_SCM_STR			(FM3_CRG_BASE + 0x04)
+#define FM3_CRG_STB_CTL			(FM3_CRG_BASE + 0x08)
+#define FM3_CRG_RST_STR			(FM3_CRG_BASE + 0x0c)
+#define FM3_CRG_BSC_PSR			(FM3_CRG_BASE + 0x10)
+#define FM3_CRG_APBC0_PSR		(FM3_CRG_BASE + 0x14)
+#define FM3_CRG_APBC1_PSR		(FM3_CRG_BASE + 0x18)
+#define FM3_CRG_APBC2_PSR		(FM3_CRG_BASE + 0x1C)
+#define FM3_CRG_SWC_PSR			(FM3_CRG_BASE + 0x20)
+#define FM3_CRG_TTC_PSR			(FM3_CRG_BASE + 0x28)
+#define FM3_CRG_CSW_TMR			(FM3_CRG_BASE + 0x30)
+#define FM3_CRG_PSW_TMR			(FM3_CRG_BASE + 0x34)
+#define FM3_CRG_PLL_CTL1		(FM3_CRG_BASE + 0x38)
+#define FM3_CRG_PLL_CTL2		(FM3_CRG_BASE + 0x3c)
+#define FM3_CRG_CSV_CTL			(FM3_CRG_BASE + 0x40)
+#define FM3_CRG_CSV_STR			(FM3_CRG_BASE + 0x44)
+#define FM3_CRG_FCSWH_CTL		(FM3_CRG_BASE + 0x48)
+#define FM3_CRG_FCSWL_CTL		(FM3_CRG_BASE + 0x4C)
+#define FM3_CRG_FCSWD_CTL		(FM3_CRG_BASE + 0x50)
+#define FM3_CRG_DBWDT_CTL		(FM3_CRG_BASE + 0x54)
+#define FM3_CRG_INT_ENR			(FM3_CRG_BASE + 0x60)
+#define FM3_CRG_INT_STR			(FM3_CRG_BASE + 0x64)
+#define FM3_CRG_INT_CLR			(FM3_CRG_BASE + 0x68)
+
+#define SCM_CTL_MOSCE			0x02
+#define SCM_CTL_SOSCE			0x08
+#define SCM_CTL_PLLE			0x10
+#define SCM_CTL_RCS_			0xe0
+#define SCM_STR_MORDY			0x02
+#define SCM_STR_SORDY			0x08
+#define SCM_STR_PLRDY			0x10
+#define SCM_STR_RCM				0xe0
+#define APBC1_PSR_APBC1RST		0x10
+#define APBC1_PSR_APBC1EN		0x80
+#define APBC2_PSR_APBC2RST		0x10
+#define APBC2_PSR_APBC2EN		0x80
+#define SWC_PSR_TESTB			0x80
+#define PSW_TMR_PINC			0x10
+
+#define FM3_HWWDT_WDG_LDR		(FM3_HWWDT_BASE + 0x000)
+#define FM3_HWWDT_WDG_VLR		(FM3_HWWDT_BASE + 0x004)
+#define FM3_HWWDT_WDG_CTL		(FM3_HWWDT_BASE + 0x008)
+#define FM3_HWWDT_WDG_ICL		(FM3_HWWDT_BASE + 0x00C)
+#define FM3_HWWDT_WDG_RIS		(FM3_HWWDT_BASE + 0x010)
+#define FM3_HWWDT_WDG_LCK		(FM3_HWWDT_BASE + 0xC00)
+
+#define FM3_BT_CH0				(FM3_BT_BASE + 0x000)
+#define FM3_BT_CH1				(FM3_BT_BASE + 0x040)
+#define FM3_BT_CH2				(FM3_BT_BASE + 0x080)
+#define FM3_BT_CH3				(FM3_BT_BASE + 0x0C0)
+#define FM3_BT_BTSEL0123		(FM3_BT_BASE + 0x101)
+#define FM3_BT_CH4				(FM3_BT_BASE + 0x200)
+#define FM3_BT_CH5				(FM3_BT_BASE + 0x240)
+#define FM3_BT_CH6				(FM3_BT_BASE + 0x280)
+#define FM3_BT_CH7				(FM3_BT_BASE + 0x2C0)
+#define FM3_BT_BTSEL4567		(FM3_BT_BASE + 0x301)
+#define FM3_BT_CH8				(FM3_BT_BASE + 0x400)
+#define FM3_BT_CH9				(FM3_BT_BASE + 0x440)
+#define FM3_BT_CHA				(FM3_BT_BASE + 0x480)
+#define FM3_BT_CHB				(FM3_BT_BASE + 0x4C0)
+#define FM3_BT_BTSEL89AB		(FM3_BT_BASE + 0x501)
+#define FM3_BT_CHC				(FM3_BT_BASE + 0x600)
+#define FM3_BT_CHD				(FM3_BT_BASE + 0x640)
+#define FM3_BT_CHE				(FM3_BT_BASE + 0x680)
+#define FM3_BT_CHF				(FM3_BT_BASE + 0x6C0)
+#define FM3_BT_BTSELCDEF		(FM3_BT_BASE + 0x701)
+#define FM3_BT_BTSSSR			(FM3_BT_BASE + 0xFFC)
+
+#define FM3_BT0_PCSR			(FM3_BT_CH0 + 0x00)
+#define FM3_BT0_PDUT			(FM3_BT_CH0 + 0x04)
+#define FM3_BT0_TMR				(FM3_BT_CH0 + 0x08)
+#define FM3_BT0_TMCR			(FM3_BT_CH0 + 0x0C)
+#define FM3_BT0_STC				(FM3_BT_CH0 + 0x10)
+#define FM3_BT0_TMCR2			(FM3_BT_CH0 + 0x11)
+#define FM3_BT1_PCSR			(FM3_BT_CH1 + 0x00)
+#define FM3_BT1_PDUT			(FM3_BT_CH1 + 0x04)
+#define FM3_BT1_TMR				(FM3_BT_CH1 + 0x08)
+#define FM3_BT1_TMCR			(FM3_BT_CH1 + 0x0C)
+#define FM3_BT1_STC				(FM3_BT_CH1 + 0x10)
+#define FM3_BT1_TMCR2			(FM3_BT_CH1 + 0x11)
+#define FM3_BT2_PCSR			(FM3_BT_CH2 + 0x00)
+#define FM3_BT2_PDUT			(FM3_BT_CH2 + 0x04)
+#define FM3_BT2_TMR				(FM3_BT_CH2 + 0x08)
+#define FM3_BT2_TMCR			(FM3_BT_CH2 + 0x0C)
+#define FM3_BT2_STC				(FM3_BT_CH2 + 0x10)
+#define FM3_BT2_TMCR2			(FM3_BT_CH2 + 0x11)
+#define FM3_BT3_PCSR			(FM3_BT_CH3 + 0x00)
+#define FM3_BT3_PDUT			(FM3_BT_CH3 + 0x04)
+#define FM3_BT3_TMR				(FM3_BT_CH3 + 0x08)
+#define FM3_BT3_TMCR			(FM3_BT_CH3 + 0x0C)
+#define FM3_BT3_STC				(FM3_BT_CH3 + 0x10)
+#define FM3_BT3_TMCR2			(FM3_BT_CH3 + 0x11)
+#define FM3_BT4_PCSR			(FM3_BT_CH4 + 0x00)
+#define FM3_BT4_PDUT			(FM3_BT_CH4 + 0x04)
+#define FM3_BT4_TMR				(FM3_BT_CH4 + 0x08)
+#define FM3_BT4_TMCR			(FM3_BT_CH4 + 0x0C)
+#define FM3_BT4_STC				(FM3_BT_CH4 + 0x10)
+#define FM3_BT4_TMCR2			(FM3_BT_CH4 + 0x11)
+#define FM3_BT5_PCSR			(FM3_BT_CH5 + 0x00)
+#define FM3_BT5_PDUT			(FM3_BT_CH5 + 0x04)
+#define FM3_BT5_TMR				(FM3_BT_CH5 + 0x08)
+#define FM3_BT5_TMCR			(FM3_BT_CH5 + 0x0C)
+#define FM3_BT5_STC				(FM3_BT_CH5 + 0x10)
+#define FM3_BT5_TMCR2			(FM3_BT_CH5 + 0x11)
+#define FM3_BT6_PCSR			(FM3_BT_CH6 + 0x00)
+#define FM3_BT6_PDUT			(FM3_BT_CH6 + 0x04)
+#define FM3_BT6_TMR				(FM3_BT_CH6 + 0x08)
+#define FM3_BT6_TMCR			(FM3_BT_CH6 + 0x0C)
+#define FM3_BT6_STC				(FM3_BT_CH6 + 0x10)
+#define FM3_BT6_TMCR2			(FM3_BT_CH6 + 0x11)
+#define FM3_BT7_PCSR			(FM3_BT_CH7 + 0x00)
+#define FM3_BT7_PDUT			(FM3_BT_CH7 + 0x04)
+#define FM3_BT7_TMR				(FM3_BT_CH7 + 0x08)
+#define FM3_BT7_TMCR			(FM3_BT_CH7 + 0x0C)
+#define FM3_BT7_STC				(FM3_BT_CH7 + 0x10)
+#define FM3_BT7_TMCR2			(FM3_BT_CH7 + 0x11)
+#define FM3_BT8_PCSR			(FM3_BT_CH8 + 0x00)
+#define FM3_BT8_PDUT			(FM3_BT_CH8 + 0x04)
+#define FM3_BT8_TMR				(FM3_BT_CH8 + 0x08)
+#define FM3_BT8_TMCR			(FM3_BT_CH8 + 0x0C)
+#define FM3_BT8_STC				(FM3_BT_CH8 + 0x10)
+#define FM3_BT8_TMCR2			(FM3_BT_CH8 + 0x11)
+#define FM3_BT9_PCSR			(FM3_BT_CH9 + 0x00)
+#define FM3_BT9_PDUT			(FM3_BT_CH9 + 0x04)
+#define FM3_BT9_TMR				(FM3_BT_CH9 + 0x08)
+#define FM3_BT9_TMCR			(FM3_BT_CH9 + 0x0C)
+#define FM3_BT9_STC				(FM3_BT_CH9 + 0x10)
+#define FM3_BT9_TMCR2			(FM3_BT_CH9 + 0x11)
+#define FM3_BT10_PCSR			(FM3_BT_CHA + 0x00)
+#define FM3_BT10_PDUT			(FM3_BT_CHA + 0x04)
+#define FM3_BT10_TMR			(FM3_BT_CHA + 0x08)
+#define FM3_BT10_TMCR			(FM3_BT_CHA + 0x0C)
+#define FM3_BT10_STC			(FM3_BT_CHA + 0x10)
+#define FM3_BT10_TMCR2			(FM3_BT_CHA + 0x11)
+#define FM3_BT11_PCSR			(FM3_BT_CHB + 0x00)
+#define FM3_BT11_PDUT			(FM3_BT_CHB + 0x04)
+#define FM3_BT11_TMR			(FM3_BT_CHB + 0x08)
+#define FM3_BT11_TMCR			(FM3_BT_CHB + 0x0C)
+#define FM3_BT11_STC			(FM3_BT_CHB + 0x10)
+#define FM3_BT11_TMCR2			(FM3_BT_CHB + 0x11)
+#define FM3_BT12_PCSR			(FM3_BT_CHC + 0x00)
+#define FM3_BT12_PDUT			(FM3_BT_CHC + 0x04)
+#define FM3_BT12_TMR			(FM3_BT_CHC + 0x08)
+#define FM3_BT12_TMCR			(FM3_BT_CHC + 0x0C)
+#define FM3_BT12_STC			(FM3_BT_CHC + 0x10)
+#define FM3_BT12_TMCR2			(FM3_BT_CHC + 0x11)
+#define FM3_BT13_PCSR			(FM3_BT_CHD + 0x00)
+#define FM3_BT13_PDUT			(FM3_BT_CHD + 0x04)
+#define FM3_BT13_TMR			(FM3_BT_CHD + 0x08)
+#define FM3_BT13_TMCR			(FM3_BT_CHD + 0x0C)
+#define FM3_BT13_STC			(FM3_BT_CHD + 0x10)
+#define FM3_BT13_TMCR2			(FM3_BT_CHD + 0x11)
+#define FM3_BT14_PCSR			(FM3_BT_CHE + 0x00)
+#define FM3_BT14_PDUT			(FM3_BT_CHE + 0x04)
+#define FM3_BT14_TMR			(FM3_BT_CHE + 0x08)
+#define FM3_BT14_TMCR			(FM3_BT_CHE + 0x0C)
+#define FM3_BT14_STC			(FM3_BT_CHE + 0x10)
+#define FM3_BT14_TMCR2			(FM3_BT_CHE + 0x11)
+#define FM3_BT15_PCSR			(FM3_BT_CHF + 0x00)
+#define FM3_BT15_PDUT			(FM3_BT_CHF + 0x04)
+#define FM3_BT15_TMR			(FM3_BT_CHF + 0x08)
+#define FM3_BT15_TMCR			(FM3_BT_CHF + 0x0C)
+#define FM3_BT15_STC			(FM3_BT_CHF + 0x10)
+#define FM3_BT15_TMCR2			(FM3_BT_CHF + 0x11)
+
+#define FM3_ADC0_ADSR			(FM3_ADC0_BASE + 0x00)
+#define FM3_ADC0_ADCR			(FM3_ADC0_BASE + 0x01)
+#define FM3_ADC0_SFNS			(FM3_ADC0_BASE + 0x08)
+#define FM3_ADC0_SCCR			(FM3_ADC0_BASE + 0x09)
+#define FM3_ADC0_SCFD			(FM3_ADC0_BASE + 0x0c)
+#define FM3_ADC0_SCIS23			(FM3_ADC0_BASE + 0x10)
+#define FM3_ADC0_SCIS01			(FM3_ADC0_BASE + 0x14)
+#define FM3_ADC0_PFNS			(FM3_ADC0_BASE + 0x18)
+#define FM3_ADC0_PCCR			(FM3_ADC0_BASE + 0x19)
+#define FM3_ADC0_PCFD			(FM3_ADC0_BASE + 0x1c)
+#define FM3_ADC0_PCIS			(FM3_ADC0_BASE + 0x20)
+#define FM3_ADC0_CMPCR			(FM3_ADC0_BASE + 0x24)
+#define FM3_ADC0_CMPD			(FM3_ADC0_BASE + 0x26)
+#define FM3_ADC0_ADSS23			(FM3_ADC0_BASE + 0x28)
+#define FM3_ADC0_ADSS01			(FM3_ADC0_BASE + 0x2c)
+#define FM3_ADC0_ADST1			(FM3_ADC0_BASE + 0x30)
+#define FM3_ADC0_ADST0			(FM3_ADC0_BASE + 0x31)
+#define FM3_ADC0_ADCT			(FM3_ADC0_BASE + 0x34)
+#define FM3_ADC0_PRTSL			(FM3_ADC0_BASE + 0x38)
+#define FM3_ADC0_SCTSL			(FM3_ADC0_BASE + 0x39)
+#define FM3_ADC0_ADCEN			(FM3_ADC0_BASE + 0x3c)
+#define FM3_ADC1_ADSR			(FM3_ADC1_BASE + 0x00)
+#define FM3_ADC1_ADCR			(FM3_ADC1_BASE + 0x01)
+#define FM3_ADC1_SFNS			(FM3_ADC1_BASE + 0x08)
+#define FM3_ADC1_SCCR			(FM3_ADC1_BASE + 0x09)
+#define FM3_ADC1_SCFD			(FM3_ADC1_BASE + 0x0c)
+#define FM3_ADC1_SCIS23			(FM3_ADC1_BASE + 0x10)
+#define FM3_ADC1_SCIS01			(FM3_ADC1_BASE + 0x14)
+#define FM3_ADC1_PFNS			(FM3_ADC1_BASE + 0x18)
+#define FM3_ADC1_PCCR			(FM3_ADC1_BASE + 0x19)
+#define FM3_ADC1_PCFD			(FM3_ADC1_BASE + 0x1c)
+#define FM3_ADC1_PCIS			(FM3_ADC1_BASE + 0x20)
+#define FM3_ADC1_CMPCR			(FM3_ADC1_BASE + 0x24)
+#define FM3_ADC1_CMPD			(FM3_ADC1_BASE + 0x26)
+#define FM3_ADC1_ADSS23			(FM3_ADC1_BASE + 0x28)
+#define FM3_ADC1_ADSS01			(FM3_ADC1_BASE + 0x2c)
+#define FM3_ADC1_ADST1			(FM3_ADC1_BASE + 0x30)
+#define FM3_ADC1_ADST0			(FM3_ADC1_BASE + 0x31)
+#define FM3_ADC1_ADCT			(FM3_ADC1_BASE + 0x34)
+#define FM3_ADC1_PRTSL			(FM3_ADC1_BASE + 0x38)
+#define FM3_ADC1_SCTSL			(FM3_ADC1_BASE + 0x39)
+#define FM3_ADC1_ADCEN			(FM3_ADC1_BASE + 0x3c)
+#define FM3_ADC2_ADSR			(FM3_ADC2_BASE + 0x00)
+#define FM3_ADC2_ADCR			(FM3_ADC2_BASE + 0x01)
+#define FM3_ADC2_SFNS			(FM3_ADC2_BASE + 0x08)
+#define FM3_ADC2_SCCR			(FM3_ADC2_BASE + 0x09)
+#define FM3_ADC2_SCFD			(FM3_ADC2_BASE + 0x0c)
+#define FM3_ADC2_SCIS23			(FM3_ADC2_BASE + 0x10)
+#define FM3_ADC2_SCIS01			(FM3_ADC2_BASE + 0x14)
+#define FM3_ADC2_PFNS			(FM3_ADC2_BASE + 0x18)
+#define FM3_ADC2_PCCR			(FM3_ADC2_BASE + 0x19)
+#define FM3_ADC2_PCFD			(FM3_ADC2_BASE + 0x1c)
+#define FM3_ADC2_PCIS			(FM3_ADC2_BASE + 0x20)
+#define FM3_ADC2_CMPCR			(FM3_ADC2_BASE + 0x24)
+#define FM3_ADC2_CMPD			(FM3_ADC2_BASE + 0x26)
+#define FM3_ADC2_ADSS23			(FM3_ADC2_BASE + 0x28)
+#define FM3_ADC2_ADSS01			(FM3_ADC2_BASE + 0x2c)
+#define FM3_ADC2_ADST1			(FM3_ADC2_BASE + 0x30)
+#define FM3_ADC2_ADST0			(FM3_ADC2_BASE + 0x31)
+#define FM3_ADC2_ADCT			(FM3_ADC2_BASE + 0x34)
+#define FM3_ADC2_PRTSL			(FM3_ADC2_BASE + 0x38)
+#define FM3_ADC2_SCTSL			(FM3_ADC2_BASE + 0x39)
+#define FM3_ADC2_ADCEN			(FM3_ADC2_BASE + 0x3c)
+
+#define FM3_CRTRIM_MCR_PSR		(FM3_CRTRIM_BASE + 0x00)
+#define FM3_CRTRIM_MCR_FTRM		(FM3_CRTRIM_BASE + 0x04)
+#define FM3_CRTRIM_MCR_RLR		(FM3_CRTRIM_BASE + 0x0C)
+
+#define FM3_EXTI_ENIR			(FM3_EXTI_BASE + 0x00)
+#define FM3_EXTI_EIRR			(FM3_EXTI_BASE + 0x04)
+#define FM3_EXTI_EICL			(FM3_EXTI_BASE + 0x08)
+#define FM3_EXTI_ELVR			(FM3_EXTI_BASE + 0x0C)
+#define FM3_EXTI_ELVR1			(FM3_EXTI_BASE + 0x10)
+#define FM3_EXTI_NMIRR			(FM3_EXTI_BASE + 0x14)
+#define FM3_EXTI_NMICL			(FM3_EXTI_BASE + 0x18)
+
+#define FM3_INTREQ_DRQSEL		(FM3_INTREQ_BASE + 0x000)
+#define FM3_INTREQ_ODDPKS		(FM3_INTREQ_BASE + 0x00B)
+#define FM3_INTREQ_EXC02MON		(FM3_INTREQ_BASE + 0x010)
+#define FM3_INTREQ_IRQ00MON		(FM3_INTREQ_BASE + 0x014)
+#define FM3_INTREQ_IRQ01MON		(FM3_INTREQ_BASE + 0x018)
+#define FM3_INTREQ_IRQ02MON		(FM3_INTREQ_BASE + 0x01C)
+#define FM3_INTREQ_IRQ03MON		(FM3_INTREQ_BASE + 0x020)
+#define FM3_INTREQ_IRQ04MON		(FM3_INTREQ_BASE + 0x024)
+#define FM3_INTREQ_IRQ05MON		(FM3_INTREQ_BASE + 0x028)
+#define FM3_INTREQ_IRQ06MON		(FM3_INTREQ_BASE + 0x02C)
+#define FM3_INTREQ_IRQ07MON		(FM3_INTREQ_BASE + 0x030)
+#define FM3_INTREQ_IRQ08MON		(FM3_INTREQ_BASE + 0x034)
+#define FM3_INTREQ_IRQ09MON		(FM3_INTREQ_BASE + 0x038)
+#define FM3_INTREQ_IRQ10MON		(FM3_INTREQ_BASE + 0x03C)
+#define FM3_INTREQ_IRQ11MON		(FM3_INTREQ_BASE + 0x040)
+#define FM3_INTREQ_IRQ12MON		(FM3_INTREQ_BASE + 0x044)
+#define FM3_INTREQ_IRQ13MON		(FM3_INTREQ_BASE + 0x048)
+#define FM3_INTREQ_IRQ14MON		(FM3_INTREQ_BASE + 0x04C)
+#define FM3_INTREQ_IRQ15MON		(FM3_INTREQ_BASE + 0x050)
+#define FM3_INTREQ_IRQ16MON		(FM3_INTREQ_BASE + 0x054)
+#define FM3_INTREQ_IRQ17MON		(FM3_INTREQ_BASE + 0x058)
+#define FM3_INTREQ_IRQ18MON		(FM3_INTREQ_BASE + 0x05C)
+#define FM3_INTREQ_IRQ19MON		(FM3_INTREQ_BASE + 0x060)
+#define FM3_INTREQ_IRQ20MON		(FM3_INTREQ_BASE + 0x064)
+#define FM3_INTREQ_IRQ21MON		(FM3_INTREQ_BASE + 0x068)
+#define FM3_INTREQ_IRQ22MON		(FM3_INTREQ_BASE + 0x06C)
+#define FM3_INTREQ_IRQ23MON		(FM3_INTREQ_BASE + 0x070)
+#define FM3_INTREQ_IRQ24MON		(FM3_INTREQ_BASE + 0x074)
+#define FM3_INTREQ_IRQ25MON		(FM3_INTREQ_BASE + 0x078)
+#define FM3_INTREQ_IRQ26MON		(FM3_INTREQ_BASE + 0x07C)
+#define FM3_INTREQ_IRQ27MON		(FM3_INTREQ_BASE + 0x080)
+#define FM3_INTREQ_IRQ28MON		(FM3_INTREQ_BASE + 0x084)
+#define FM3_INTREQ_IRQ29MON		(FM3_INTREQ_BASE + 0x088)
+#define FM3_INTREQ_IRQ30MON		(FM3_INTREQ_BASE + 0x08C)
+#define FM3_INTREQ_IRQ31MON		(FM3_INTREQ_BASE + 0x090)
+#define FM3_INTREQ_IRQ32MON		(FM3_INTREQ_BASE + 0x094)
+#define FM3_INTREQ_IRQ33MON		(FM3_INTREQ_BASE + 0x098)
+#define FM3_INTREQ_IRQ34MON		(FM3_INTREQ_BASE + 0x09C)
+#define FM3_INTREQ_IRQ35MON		(FM3_INTREQ_BASE + 0x0A0)
+#define FM3_INTREQ_IRQ36MON		(FM3_INTREQ_BASE + 0x0A4)
+#define FM3_INTREQ_IRQ37MON		(FM3_INTREQ_BASE + 0x0A8)
+#define FM3_INTREQ_IRQ38MON		(FM3_INTREQ_BASE + 0x0AC)
+#define FM3_INTREQ_IRQ39MON		(FM3_INTREQ_BASE + 0x0B0)
+#define FM3_INTREQ_IRQ40MON		(FM3_INTREQ_BASE + 0x0B4)
+#define FM3_INTREQ_IRQ41MON		(FM3_INTREQ_BASE + 0x0B8)
+#define FM3_INTREQ_IRQ42MON		(FM3_INTREQ_BASE + 0x0BC)
+#define FM3_INTREQ_IRQ43MON		(FM3_INTREQ_BASE + 0x0C0)
+#define FM3_INTREQ_IRQ44MON		(FM3_INTREQ_BASE + 0x0C4)
+#define FM3_INTREQ_IRQ45MON		(FM3_INTREQ_BASE + 0x0C8)
+#define FM3_INTREQ_IRQ46MON		(FM3_INTREQ_BASE + 0x0CC)
+#define FM3_INTREQ_IRQ47MON		(FM3_INTREQ_BASE + 0x0D0)
+#define FM3_INTREQ_DRQSEL1		(FM3_INTREQ_BASE + 0x200)
+#define FM3_INTREQ_DQESEL		(FM3_INTREQ_BASE + 0x204)
+#define FM3_INTREQ_ODDPKS1		(FM3_INTREQ_BASE + 0x20F)
+
+#define FM3_GPIO_PFR			(FM3_GPIO_BASE + 0x000)
+#define FM3_GPIO_PFR0			(FM3_GPIO_PFR + 0x00)
+#define FM3_GPIO_PFR1			(FM3_GPIO_PFR + 0x04)
+#define FM3_GPIO_PFR2			(FM3_GPIO_PFR + 0x08)
+#define FM3_GPIO_PFR3			(FM3_GPIO_PFR + 0x0C)
+#define FM3_GPIO_PFR4			(FM3_GPIO_PFR + 0x10)
+#define FM3_GPIO_PFR5			(FM3_GPIO_PFR + 0x14)
+#define FM3_GPIO_PFR6			(FM3_GPIO_PFR + 0x18)
+#define FM3_GPIO_PFR7			(FM3_GPIO_PFR + 0x1C)
+#define FM3_GPIO_PFR8			(FM3_GPIO_PFR + 0x20)
+#define FM3_GPIO_PFR9			(FM3_GPIO_PFR + 0x24)
+#define FM3_GPIO_PFRA			(FM3_GPIO_PFR + 0x28)
+#define FM3_GPIO_PFRB			(FM3_GPIO_PFR + 0x2C)
+#define FM3_GPIO_PFRC			(FM3_GPIO_PFR + 0x30)
+#define FM3_GPIO_PFRD			(FM3_GPIO_PFR + 0x34)
+#define FM3_GPIO_PFRE			(FM3_GPIO_PFR + 0x38)
+#define FM3_GPIO_PFRF			(FM3_GPIO_PFR + 0x3C)
+#define FM3_GPIO_PCR			(FM3_GPIO_BASE + 0x100)
+#define FM3_GPIO_PCR0			(FM3_GPIO_PCR + 0x00)
+#define FM3_GPIO_PCR1			(FM3_GPIO_PCR + 0x04)
+#define FM3_GPIO_PCR2			(FM3_GPIO_PCR + 0x08)
+#define FM3_GPIO_PCR3			(FM3_GPIO_PCR + 0x0C)
+#define FM3_GPIO_PCR4			(FM3_GPIO_PCR + 0x10)
+#define FM3_GPIO_PCR5			(FM3_GPIO_PCR + 0x14)
+#define FM3_GPIO_PCR6			(FM3_GPIO_PCR + 0x18)
+#define FM3_GPIO_PCR7			(FM3_GPIO_PCR + 0x1C)
+#define FM3_GPIO_PCR8			(FM3_GPIO_PCR + 0x20)
+#define FM3_GPIO_PCR9			(FM3_GPIO_PCR + 0x24)
+#define FM3_GPIO_PCRA			(FM3_GPIO_PCR + 0x28)
+#define FM3_GPIO_PCRB			(FM3_GPIO_PCR + 0x2C)
+#define FM3_GPIO_PCRC			(FM3_GPIO_PCR + 0x30)
+#define FM3_GPIO_PCRD			(FM3_GPIO_PCR + 0x34)
+#define FM3_GPIO_PCRE			(FM3_GPIO_PCR + 0x38)
+#define FM3_GPIO_PCRF			(FM3_GPIO_PCR + 0x3C)
+#define FM3_GPIO_DDR			(FM3_GPIO_BASE + 0x200)
+#define FM3_GPIO_DDR0			(FM3_GPIO_DDR + 0x00)
+#define FM3_GPIO_DDR1			(FM3_GPIO_DDR + 0x04)
+#define FM3_GPIO_DDR2			(FM3_GPIO_DDR + 0x08)
+#define FM3_GPIO_DDR3			(FM3_GPIO_DDR + 0x0C)
+#define FM3_GPIO_DDR4			(FM3_GPIO_DDR + 0x10)
+#define FM3_GPIO_DDR5			(FM3_GPIO_DDR + 0x14)
+#define FM3_GPIO_DDR6			(FM3_GPIO_DDR + 0x18)
+#define FM3_GPIO_DDR7			(FM3_GPIO_DDR + 0x1C)
+#define FM3_GPIO_DDR8			(FM3_GPIO_DDR + 0x20)
+#define FM3_GPIO_DDR9			(FM3_GPIO_DDR + 0x24)
+#define FM3_GPIO_DDRA			(FM3_GPIO_DDR + 0x28)
+#define FM3_GPIO_DDRB			(FM3_GPIO_DDR + 0x2C)
+#define FM3_GPIO_DDRC			(FM3_GPIO_DDR + 0x30)
+#define FM3_GPIO_DDRD			(FM3_GPIO_DDR + 0x34)
+#define FM3_GPIO_DDRE			(FM3_GPIO_DDR + 0x38)
+#define FM3_GPIO_DDRF			(FM3_GPIO_DDR + 0x3C)
+#define FM3_GPIO_PDIR			(FM3_GPIO_BASE + 0x300)
+#define FM3_GPIO_PDIR0			(FM3_GPIO_PDIR + 0x00)
+#define FM3_GPIO_PDIR1			(FM3_GPIO_PDIR + 0x04)
+#define FM3_GPIO_PDIR2			(FM3_GPIO_PDIR + 0x08)
+#define FM3_GPIO_PDIR3			(FM3_GPIO_PDIR + 0x0C)
+#define FM3_GPIO_PDIR4			(FM3_GPIO_PDIR + 0x10)
+#define FM3_GPIO_PDIR5			(FM3_GPIO_PDIR + 0x14)
+#define FM3_GPIO_PDIR6			(FM3_GPIO_PDIR + 0x18)
+#define FM3_GPIO_PDIR7			(FM3_GPIO_PDIR + 0x1C)
+#define FM3_GPIO_PDIR8			(FM3_GPIO_PDIR + 0x20)
+#define FM3_GPIO_PDIR9			(FM3_GPIO_PDIR + 0x24)
+#define FM3_GPIO_PDIRA			(FM3_GPIO_PDIR + 0x28)
+#define FM3_GPIO_PDIRB			(FM3_GPIO_PDIR + 0x2C)
+#define FM3_GPIO_PDIRC			(FM3_GPIO_PDIR + 0x30)
+#define FM3_GPIO_PDIRD			(FM3_GPIO_PDIR + 0x34)
+#define FM3_GPIO_PDIRE			(FM3_GPIO_PDIR + 0x38)
+#define FM3_GPIO_PDIRF			(FM3_GPIO_PDIR + 0x3C)
+#define FM3_GPIO_PDOR			(FM3_GPIO_BASE + 0x400)
+#define FM3_GPIO_PDOR0			(FM3_GPIO_PDOR + 0x00)
+#define FM3_GPIO_PDOR1			(FM3_GPIO_PDOR + 0x04)
+#define FM3_GPIO_PDOR2			(FM3_GPIO_PDOR + 0x08)
+#define FM3_GPIO_PDOR3			(FM3_GPIO_PDOR + 0x0C)
+#define FM3_GPIO_PDOR4			(FM3_GPIO_PDOR + 0x10)
+#define FM3_GPIO_PDOR5			(FM3_GPIO_PDOR + 0x14)
+#define FM3_GPIO_PDOR6			(FM3_GPIO_PDOR + 0x18)
+#define FM3_GPIO_PDOR7			(FM3_GPIO_PDOR + 0x1C)
+#define FM3_GPIO_PDOR8			(FM3_GPIO_PDOR + 0x20)
+#define FM3_GPIO_PDOR9			(FM3_GPIO_PDOR + 0x24)
+#define FM3_GPIO_PDORA			(FM3_GPIO_PDOR + 0x28)
+#define FM3_GPIO_PDORB			(FM3_GPIO_PDOR + 0x2C)
+#define FM3_GPIO_PDORC			(FM3_GPIO_PDOR + 0x30)
+#define FM3_GPIO_PDORD			(FM3_GPIO_PDOR + 0x34)
+#define FM3_GPIO_PDORE			(FM3_GPIO_PDOR + 0x38)
+#define FM3_GPIO_PDORF			(FM3_GPIO_PDOR + 0x3C)
+#define FM3_GPIO_ADE			(FM3_GPIO_BASE + 0x500)
+#define FM3_GPIO_EPFR			(FM3_GPIO_BASE + 0x600)
+#define FM3_GPIO_EPFR00			(FM3_GPIO_EPFR + 0x00)
+#define FM3_GPIO_EPFR01			(FM3_GPIO_EPFR + 0x04)
+#define FM3_GPIO_EPFR02			(FM3_GPIO_EPFR + 0x08)
+#define FM3_GPIO_EPFR03			(FM3_GPIO_EPFR + 0x0C)
+#define FM3_GPIO_EPFR04			(FM3_GPIO_EPFR + 0x10)
+#define FM3_GPIO_EPFR05			(FM3_GPIO_EPFR + 0x14)
+#define FM3_GPIO_EPFR06			(FM3_GPIO_EPFR + 0x18)
+#define FM3_GPIO_EPFR07			(FM3_GPIO_EPFR + 0x1C)
+#define FM3_GPIO_EPFR08			(FM3_GPIO_EPFR + 0x20)
+#define FM3_GPIO_EPFR09			(FM3_GPIO_EPFR + 0x24)
+#define FM3_GPIO_EPFR10			(FM3_GPIO_EPFR + 0x28)
+#define FM3_GPIO_EPFR11			(FM3_GPIO_EPFR + 0x2C)
+#define FM3_GPIO_EPFR12			(FM3_GPIO_EPFR + 0x30)
+#define FM3_GPIO_EPFR13			(FM3_GPIO_EPFR + 0x34)
+#define FM3_GPIO_EPFR14			(FM3_GPIO_EPFR + 0x38)
+#define FM3_GPIO_EPFR15			(FM3_GPIO_EPFR + 0x3C)
+#define FM3_GPIO_PZR			(FM3_GPIO_BASE + 0x700)
+#define FM3_GPIO_PZR0			(FM3_GPIO_PZR + 0x00)
+#define FM3_GPIO_PZR1			(FM3_GPIO_PZR + 0x04)
+#define FM3_GPIO_PZR2			(FM3_GPIO_PZR + 0x08)
+#define FM3_GPIO_PZR3			(FM3_GPIO_PZR + 0x0C)
+#define FM3_GPIO_PZR4			(FM3_GPIO_PZR + 0x10)
+#define FM3_GPIO_PZR5			(FM3_GPIO_PZR + 0x14)
+#define FM3_GPIO_PZR6			(FM3_GPIO_PZR + 0x18)
+#define FM3_GPIO_PZR7			(FM3_GPIO_PZR + 0x1C)
+#define FM3_GPIO_PZR8			(FM3_GPIO_PZR + 0x20)
+#define FM3_GPIO_PZR9			(FM3_GPIO_PZR + 0x24)
+#define FM3_GPIO_PZRA			(FM3_GPIO_PZR + 0x28)
+#define FM3_GPIO_PZRB			(FM3_GPIO_PZR + 0x2C)
+#define FM3_GPIO_PZRC			(FM3_GPIO_PZR + 0x30)
+#define FM3_GPIO_PZRD			(FM3_GPIO_PZR + 0x34)
+#define FM3_GPIO_PZRE			(FM3_GPIO_PZR + 0x38)
+#define FM3_GPIO_PZRF			(FM3_GPIO_PZR + 0x3C)
+
+/*
+ *  FM3_MFSx Register Bit Definition
+ */
+#define SMR_SOE					0x01U
+#define SMR_BDS					0x04U
+#define SMR_SBL					0x08U
+#define SMR_WUCR				0x10U
+#define SMR_MD_UART				0x00U
+#define SMR_MD_UART_MP			0x20U
+#define SMR_MD_SIO				0x40U
+#define SMR_MD_LIN				0x60U
+#define SMR_MD_I2C				0x80U
+
+#define SCR_TXE					0x01U
+#define SCR_RXE					0x02U
+#define SCR_TBIE				0x04U
+#define SCR_TIE					0x08U
+#define SCR_RIE					0x10U
+#define SCR_UPCL				0x80U
+
+#define SSR_TBI					0x01U
+#define SSR_TDRE				0x02U
+#define SSR_RDRF				0x04U
+#define SSR_ORE					0x08U
+#define SSR_FRE					0x10U
+#define SSR_PE					0x20U
+#define SSR_REC					0x80U
+
+#define ESCR_P					0x08U
+#define ESCR_PEN				0x10U
+#define ESCR_INV				0x20U
+#define ESCR_ESBL				0x40U
+#define ESCR_FLWEN				0x80U
+#define ESCR_DATABITS_8			0x00U
+#define ESCR_DATABITS_5			0x01U
+#define ESCR_DATABITS_6			0x02U
+#define ESCR_DATABITS_7			0x03U
+#define ESCR_DATABITS_9			0x04U
+
+#define BGR_EXT					0x8000U
+
+#define FM3_EXBUS_MODE			(FM3_EXTBUS_BASE + 0x000)
+#define FM3_EXBUS_MODE0			(FM3_EXBUS_MODE + 0x00)
+#define FM3_EXBUS_MODE1			(FM3_EXBUS_MODE + 0x04)
+#define FM3_EXBUS_MODE2			(FM3_EXBUS_MODE + 0x08)
+#define FM3_EXBUS_MODE3			(FM3_EXBUS_MODE + 0x0C)
+#define FM3_EXBUS_MODE4			(FM3_EXBUS_MODE + 0x10)
+#define FM3_EXBUS_MODE5			(FM3_EXBUS_MODE + 0x14)
+#define FM3_EXBUS_MODE6			(FM3_EXBUS_MODE + 0x18)
+#define FM3_EXBUS_MODE7			(FM3_EXBUS_MODE + 0x1C)
+#define FM3_EXBUS_TIM			(FM3_EXTBUS_BASE + 0x020)
+#define FM3_EXBUS_TIM0			(FM3_EXBUS_TIM + 0x00)
+#define FM3_EXBUS_TIM1			(FM3_EXBUS_TIM + 0x04)
+#define FM3_EXBUS_TIM2			(FM3_EXBUS_TIM + 0x08)
+#define FM3_EXBUS_TIM3			(FM3_EXBUS_TIM + 0x0C)
+#define FM3_EXBUS_TIM4			(FM3_EXBUS_TIM + 0x10)
+#define FM3_EXBUS_TIM5			(FM3_EXBUS_TIM + 0x14)
+#define FM3_EXBUS_TIM6			(FM3_EXBUS_TIM + 0x18)
+#define FM3_EXBUS_TIM7			(FM3_EXBUS_TIM + 0x1C)
+#define FM3_EXBUS_AREA			(FM3_EXTBUS_BASE + 0x040)
+#define FM3_EXBUS_AREA0			(FM3_EXBUS_AREA + 0x00)
+#define FM3_EXBUS_AREA1			(FM3_EXBUS_AREA + 0x04)
+#define FM3_EXBUS_AREA2			(FM3_EXBUS_AREA + 0x08)
+#define FM3_EXBUS_AREA3			(FM3_EXBUS_AREA + 0x0C)
+#define FM3_EXBUS_AREA4			(FM3_EXBUS_AREA + 0x10)
+#define FM3_EXBUS_AREA5			(FM3_EXBUS_AREA + 0x14)
+#define FM3_EXBUS_AREA6			(FM3_EXBUS_AREA + 0x18)
+#define FM3_EXBUS_AREA7			(FM3_EXBUS_AREA + 0x1C)
+#define FM3_EXBUS_ATIM			(FM3_EXTBUS_BASE + 0x060)
+#define FM3_EXBUS_ATIM0			(FM3_EXBUS_ATIM + 0x00)
+#define FM3_EXBUS_ATIM1			(FM3_EXBUS_ATIM + 0x04)
+#define FM3_EXBUS_ATIM2			(FM3_EXBUS_ATIM + 0x08)
+#define FM3_EXBUS_ATIM3			(FM3_EXBUS_ATIM + 0x0C)
+#define FM3_EXBUS_ATIM4			(FM3_EXBUS_ATIM + 0x10)
+#define FM3_EXBUS_ATIM5			(FM3_EXBUS_ATIM + 0x14)
+#define FM3_EXBUS_ATIM6			(FM3_EXBUS_ATIM + 0x18)
+#define FM3_EXBUS_ATIM7			(FM3_EXBUS_ATIM + 0x1C)
+#define FM3_EXBUS_DCLKR			(FM3_EXTBUS_BASE + 0x300)
+
+#define FM3_DMAC_DMACR			(FM3_DMAC_BASE + 0x000)
+#define FM3_DMAC0_BASE			(FM3_DMAC_BASE + 0x010)
+#define FM3_DMAC_DMACA0			(FM3_DMAC0_BASE + 0x00)
+#define FM3_DMAC_DMACB0			(FM3_DMAC0_BASE + 0x04)
+#define FM3_DMAC_DMACSA0		(FM3_DMAC0_BASE + 0x08)
+#define FM3_DMAC_DMACDA0		(FM3_DMAC0_BASE + 0x0C)
+#define FM3_DMAC1_BASE			(FM3_DMAC_BASE + 0x020)
+#define FM3_DMAC_DMACA1			(FM3_DMAC1_BASE + 0x00)
+#define FM3_DMAC_DMACB1			(FM3_DMAC1_BASE + 0x04)
+#define FM3_DMAC_DMACSA1		(FM3_DMAC1_BASE + 0x08)
+#define FM3_DMAC_DMACDA1		(FM3_DMAC1_BASE + 0x0C)
+#define FM3_DMAC2_BASE			(FM3_DMAC_BASE + 0x030)
+#define FM3_DMAC_DMACA2			(FM3_DMAC2_BASE + 0x00)
+#define FM3_DMAC_DMACB2			(FM3_DMAC2_BASE + 0x04)
+#define FM3_DMAC_DMACSA2		(FM3_DMAC2_BASE + 0x08)
+#define FM3_DMAC_DMACDA2		(FM3_DMAC2_BASE + 0x0C)
+#define FM3_DMAC3_BASE			(FM3_DMAC_BASE + 0x040)
+#define FM3_DMAC_DMACA3			(FM3_DMAC3_BASE + 0x00)
+#define FM3_DMAC_DMACB3			(FM3_DMAC3_BASE + 0x04)
+#define FM3_DMAC_DMACSA3		(FM3_DMAC3_BASE + 0x08)
+#define FM3_DMAC_DMACDA3		(FM3_DMAC3_BASE + 0x0C)
+#define FM3_DMAC4_BASE			(FM3_DMAC_BASE + 0x050)
+#define FM3_DMAC_DMACA4			(FM3_DMAC4_BASE + 0x00)
+#define FM3_DMAC_DMACB4			(FM3_DMAC4_BASE + 0x04)
+#define FM3_DMAC_DMACSA4		(FM3_DMAC4_BASE + 0x08)
+#define FM3_DMAC_DMACDA4		(FM3_DMAC4_BASE + 0x0C)
+#define FM3_DMAC5_BASE			(FM3_DMAC_BASE + 0x060)
+#define FM3_DMAC_DMACA5			(FM3_DMAC5_BASE + 0x00)
+#define FM3_DMAC_DMACB5			(FM3_DMAC5_BASE + 0x04)
+#define FM3_DMAC_DMACSA5		(FM3_DMAC5_BASE + 0x08)
+#define FM3_DMAC_DMACDA5		(FM3_DMAC5_BASE + 0x0C)
+#define FM3_DMAC6_BASE			(FM3_DMAC_BASE + 0x070)
+#define FM3_DMAC_DMACA6			(FM3_DMAC6_BASE + 0x00)
+#define FM3_DMAC_DMACB6			(FM3_DMAC6_BASE + 0x04)
+#define FM3_DMAC_DMACSA6		(FM3_DMAC6_BASE + 0x08)
+#define FM3_DMAC_DMACDA6		(FM3_DMAC6_BASE + 0x0C)
+#define FM3_DMAC7_BASE			(FM3_DMAC_BASE + 0x080)
+#define FM3_DMAC_DMACA7			(FM3_DMAC7_BASE + 0x00)
+#define FM3_DMAC_DMACB7			(FM3_DMAC7_BASE + 0x04)
+#define FM3_DMAC_DMACSA7		(FM3_DMAC7_BASE + 0x08)
+#define FM3_DMAC_DMACDA7		(FM3_DMAC7_BASE + 0x0C)
+
+#ifndef TOPPERS_MACRO_ONLY
+
+#endif /* TOPPERS_MACRO_ONLY */
+
+#endif /* TOPPERS_FM3_MB9BXXX_H */

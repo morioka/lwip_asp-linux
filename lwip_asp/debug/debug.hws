@@ -1,0 +1,43 @@
+[HIMDBVersion]
+2.0
+[DATABASE_VERSION]
+"11.0" 
+[WORKSPACE_DETAILS]
+"debug" "R:\cq\lwip_asp\debug" "R:\cq\lwip_asp\debug\debug.hws" "SuperH RISC engine" "KPIT GNUSH [ELF]" 
+[SHARED_WORKSPACE_CONTROL_STATUS]
+"" "" "" 
+"" "" "" 
+[PROJECTS]
+"encx24j600_dynamic" "R:\cq\lwip_asp\debug\encx24j600_dynamic" "R:\cq\lwip_asp\debug\encx24j600_dynamic\encx24j600_dynamic.hwp" 0 
+"encx24j600_static" "R:\cq\lwip_asp\debug\encx24j600_static" "R:\cq\lwip_asp\debug\encx24j600_static\encx24j600_static.hwp" 0 
+"lfa1c_dynamic" "R:\cq\lwip_asp\debug\lfa1c_dynamic" "R:\cq\lwip_asp\debug\lfa1c_dynamic\lfa1c_dynamic.hwp" 0 
+"lfa1c_static" "R:\cq\lwip_asp\debug\lfa1c_static" "R:\cq\lwip_asp\debug\lfa1c_static\lfa1c_static.hwp" 0 
+[INFORMATION]
+"ワークスペース情報がありません" 
+[SCRAP]
+[PROJECT_DEPENDENCY]
+[WORKSPACE_PROPERTIES]
+[HELP_FILES]
+[GENERAL_DATA_PROJECT]
+[USERMENUTOOLS]
+[CUSTOMPLACEHOLDERS]
+[MAKEFILE_BUILD_INFO]
+"$(WORKSPDIR)\make\$(PROJECTNAME)_$(CONFIGNAME).mak" "" "$(WORKSPDIR)\make" 0 0 0 
+[VD_CONFIGURATION_OPTIONS]
+"ACTIVE_DESKTOP" "0" 
+[VD_CONFIGURATIONS]
+"0" "Default1" "1" 
+"1" "Default2" "1" 
+"2" "Default3" "1" 
+"3" "Default4" "1" 
+[OPTIONS_DEBUG_TAB]
+0 0 0 0 0 
+[VCS]
+"" "" "" 0 
+[VCS_PROJECT]
+[MAKEFILE_ENV_STRINGS]
+[MAKEFILE_ENV_FLAGS]
+1 0 0 
+[MAKEFILE_CLEAN_INFO]
+"" 
+[END]

@@ -1,0 +1,7 @@
+PACKAGE pdic_sh
+VERSION 1.7.1
+
+MANIFEST
+sh_scif.c
+sh_scif.h
+pdic_user.txt
