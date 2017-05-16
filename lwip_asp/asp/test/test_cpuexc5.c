@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_cpuexc5.c 1577 2009-05-31 14:30:51Z ertl-hiro $
+ *  $Id: test_cpuexc5.c 2534 2013-10-13 12:27:37Z ertl-hiro $
  */
 
 /* 
@@ -103,6 +103,8 @@ void
 task1(intptr_t exinf)
 {
 	ER		ercd;
+
+	test_start(__FILE__);
 
 	check_point(1);
 	check_state(false, false, TIPM_ENAALL, false, false, true);

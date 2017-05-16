@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: eventflag.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  $Id: eventflag.c 2631 2014-04-13 09:49:44Z ertl-hiro $
  */
 
 /*
@@ -162,13 +162,15 @@ initialize_eventflag(void)
 	FLGCB	*p_flgcb;
 	FLGINIB	*p_flginib;
 
-	for (p_flgcb = flgcb_table, i = 0; i < tnum_sflg; p_flgcb++, i++) {
+	for (i = 0; i < tnum_sflg; i++) {
+		p_flgcb = &(flgcb_table[i]);
 		queue_initialize(&(p_flgcb->wait_queue));
 		p_flgcb->p_flginib = &(flginib_table[i]);
 		p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
 	}
 	queue_initialize(&free_flgcb);
-	for (j = 0; i < tnum_flg; p_flgcb++, i++, j++) {
+	for (j = 0; i < tnum_flg; i++, j++) {
+		p_flgcb = &(flgcb_table[i]);
 		p_flginib = &(aflginib_table[j]);
 		p_flginib->flgatr = TA_NOEXS;
 		p_flgcb->p_flginib = ((const FLGINIB *) p_flginib);
@@ -177,6 +179,27 @@ initialize_eventflag(void)
 }
 
 #endif /* TOPPERS_flgini */
+
+/*
+ *  イベントフラグ待ち解除条件のチェック
+ */
+#ifdef TOPPERS_flgcnd
+
+bool_t
+check_flg_cond(FLGCB *p_flgcb, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
+{
+	if ((wfmode & TWF_ORW) != 0U ? (p_flgcb->flgptn & waiptn) != 0U
+									: (p_flgcb->flgptn & waiptn) == waiptn) {
+		*p_flgptn = p_flgcb->flgptn;
+		if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
+			p_flgcb->flgptn = 0U;
+		}
+		return(true);
+	}
+	return(false);
+}
+
+#endif /* TOPPERS_flgcnd */
 
 /*
  *  イベントフラグの生成
@@ -195,7 +218,7 @@ acre_flg(const T_CFLG *pk_cflg)
 	CHECK_RSATR(pk_cflg->flgatr, TA_TPRI|TA_WMUL|TA_CLR);
 
 	t_lock_cpu();
-	if (queue_empty(&free_flgcb)) {
+	if (tnum_flg == 0 || queue_empty(&free_flgcb)) {
 		ercd = E_NOID;
 	}
 	else {
@@ -260,27 +283,6 @@ del_flg(ID flgid)
 }
 
 #endif /* TOPPERS_del_flg */
-
-/*
- *  イベントフラグ待ち解除条件のチェック
- */
-#ifdef TOPPERS_flgcnd
-
-bool_t
-check_flg_cond(FLGCB *p_flgcb, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
-{
-	if ((wfmode & TWF_ORW) != 0U ? (p_flgcb->flgptn & waiptn) != 0U
-									: (p_flgcb->flgptn & waiptn) == waiptn) {
-		*p_flgptn = p_flgcb->flgptn;
-		if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
-			p_flgcb->flgptn = 0U;
-		}
-		return(true);
-	}
-	return(false);
-}
-
-#endif /* TOPPERS_flgcnd */
 
 /*
  *  イベントフラグのセット

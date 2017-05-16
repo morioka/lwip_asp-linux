@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Advanced Standard Profile Kernel
  * 
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: overrun.c 1902 2010-08-17 22:38:52Z ertl-hiro $
+ *  @(#) $Id: overrun.c 2657 2014-09-28 06:43:24Z ertl-hiro $
  */
 
 /*
@@ -329,29 +329,36 @@ ref_ovr(ID tskid, T_ROVR *pk_rovr)
 
 /*
  *  オーバランハンドラ起動ルーチン
+ *
+ *  オーバランハンドラの呼出し後に，呼出し前の状態（CPUロックフラグ，割
+ *  込み優先度マスク）に戻さないのは，このルーチンからのリターン後に，
+ *  割込み出口処理で元の状態に戻すためである．
  */
 #ifdef TOPPERS_ovrcal
 
 void
 call_ovrhdr(void)
 {
-	PRI		saved_ipm;
-
 	assert(sense_context());
 	assert(!i_sense_lock());
 	assert(ovrinib.ovrhdr != NULL);
 
-	p_runtsk->leftotm = 0U;
-	saved_ipm = i_get_ipm();
+	i_lock_cpu();
+	if (p_runtsk!= NULL && p_runtsk->leftotm == 1U) {
+		p_runtsk->leftotm = 0U;
+		i_unlock_cpu();
 
-	LOG_OVR_ENTER(p_runtsk);
-	(*((OVRHDR)(ovrinib.ovrhdr)))(TSKID(p_runtsk), p_runtsk->p_tinib->exinf);
-	LOG_OVR_LEAVE(p_runtsk);
-
-	if (i_sense_lock()) {
+		LOG_OVR_ENTER(p_runtsk);
+		((OVRHDR)(ovrinib.ovrhdr))(TSKID(p_runtsk), p_runtsk->p_tinib->exinf);
+		LOG_OVR_LEAVE(p_runtsk);
+	}
+	else {
+		/*
+		 *  このルーチンが呼び出される前に，オーバランハンドラの起動が
+		 *  キャンセルされた場合
+		 */
 		i_unlock_cpu();
 	}
-	i_set_ipm(saved_ipm);
 }
 
 #endif /* TOPPERS_ovrcal */

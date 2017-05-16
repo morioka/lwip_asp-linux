@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.c 2018 2010-12-31 13:43:05Z ertl-hiro $
+ *  $Id: task.c 2248 2011-08-30 01:05:11Z ertl-hiro $
  */
 
 /*
@@ -102,11 +102,6 @@ QUEUE	ready_queue[TNUM_TPRI];
 uint16_t	ready_primap;
 
 /*
- *  使用していないTCBのリスト
- */
-QUEUE	free_tcb;
-
-/*
  *  タスク管理モジュールの初期化
  */
 void
@@ -114,9 +109,9 @@ initialize_task(void)
 {
 	uint_t	i, j;
 	TCB		*p_tcb;
-	TINIB	*p_tinib;
 
-	p_runtsk = p_schedtsk = NULL;
+	p_runtsk = NULL;
+	p_schedtsk = NULL;
 	reqflg = false;
 	ipmflg = true;
 	disdsp = false;
@@ -127,23 +122,15 @@ initialize_task(void)
 	}
 	ready_primap = 0U;
 
-	for (i = 0; i < tnum_stsk; i++) {
+	for (i = 0; i < tnum_tsk; i++) {
 		j = INDEX_TSK(torder_table[i]);
 		p_tcb = &(tcb_table[j]);
 		p_tcb->p_tinib = &(tinib_table[j]);
 		p_tcb->actque = false;
 		make_dormant(p_tcb);
 		if ((p_tcb->p_tinib->tskatr & TA_ACT) != 0U) {
-			make_active(p_tcb);
+			(void) make_active(p_tcb);
 		}
-	}
-	queue_initialize(&free_tcb);
-	for (j = 0; i < tnum_tsk; i++, j++) {
-		p_tcb = &(tcb_table[i]);
-		p_tinib = &(atinib_table[j]);
-		p_tinib->tskatr = TA_NOEXS;
-		p_tcb->p_tinib = ((const TINIB *) p_tinib);
-		queue_insert_prev(&free_tcb, &(p_tcb->task_queue));
 	}
 }
 

@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2008,2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2008-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_sem2.c 1577 2009-05-31 14:30:51Z ertl-hiro $
+ *  $Id: test_sem2.c 2534 2013-10-13 12:27:37Z ertl-hiro $
  */
 
 /* 
@@ -197,12 +197,14 @@ signal_var(void)
 	flagvar = true;
 }
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 static uint_t	alarm1_count = 0;
 
 void
 alarm1_handler(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	switch (++alarm1_count) {
 	case 1:
@@ -283,6 +285,9 @@ alarm1_handler(intptr_t exinf)
 		return;
 
 		check_point(0);
+
+	default:
+		check_point(0);
 	}
 	check_point(0);
 }
@@ -290,7 +295,9 @@ alarm1_handler(intptr_t exinf)
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
+
+	test_start(__FILE__);
 
 	check_point(1);
 	ercd = isig_sem(SEM1);
@@ -395,14 +402,13 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(36);
-
 	check_point(0);
 }
 
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(24);
 	ercd = tslp_tsk(10);
@@ -423,7 +429,7 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(13);
 	ercd = sta_alm(ALM1, 10);

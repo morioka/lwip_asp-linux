@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: task_manage.c 2018 2010-12-31 13:43:05Z ertl-hiro $
+ *  $Id: task_manage.c 2642 2014-04-17 21:28:15Z ertl-hiro $
  */
 
 /*
@@ -137,13 +137,17 @@
  */
 #ifdef TOPPERS_acre_tsk
 
+#ifndef TARGET_MIN_STKSZ
+#define TARGET_MIN_STKSZ	1U		/* 未定義の場合は0でないことをチェック */
+#endif /* TARGET_MIN_STKSZ */
+
 ER_UINT
 acre_tsk(const T_CTSK *pk_ctsk)
 {
 	TCB		*p_tcb;
 	TINIB	*p_tinib;
 	ATR		tskatr;
-	STK_T	*stk;
+	void	*stk;
 	ER		ercd;
 
 	LOG_ACRE_TSK_ENTER(pk_ctsk);
@@ -152,9 +156,11 @@ acre_tsk(const T_CTSK *pk_ctsk)
 	CHECK_ALIGN_FUNC(pk_ctsk->task);
 	CHECK_NONNULL_FUNC(pk_ctsk->task);
 	CHECK_TPRI(pk_ctsk->itskpri);
-	CHECK_STKSZ_MIN(pk_ctsk->stksz);
-	CHECK_ALIGN_STKSZ(pk_ctsk->stksz);
-	CHECK_ALIGN_STACK(pk_ctsk->stk);
+	CHECK_PAR(pk_ctsk->stksz >= TARGET_MIN_STKSZ);
+	if (pk_ctsk->stk != NULL) {
+		CHECK_ALIGN_STKSZ(pk_ctsk->stksz);
+		CHECK_ALIGN_STACK(pk_ctsk->stk);
+	}
 	tskatr = pk_ctsk->tskatr;
 	stk = pk_ctsk->stk;
 
@@ -164,7 +170,7 @@ acre_tsk(const T_CTSK *pk_ctsk)
 	}
 	else {
 		if (stk == NULL) {
-			stk = kernel_malloc(pk_ctsk->stksz);
+			stk = kernel_malloc(ROUND_STK_T(pk_ctsk->stksz));
 			tskatr |= TA_MEMALLOC;
 		}
 		if (stk == NULL) {
@@ -355,8 +361,8 @@ can_act(ID tskid)
 	}
 	else {
 		ercd = p_tcb->actque ? 1 : 0;
+		p_tcb->actque = false;
 	}
-	p_tcb->actque = false;
 	t_unlock_cpu();
 
   error_exit:
@@ -495,8 +501,6 @@ chg_pri(ID tskid, PRI tskpri)
 	CHECK_TSKID_SELF(tskid);
 	CHECK_TPRI_INI(tskpri);
 	p_tcb = get_tcb_self(tskid);
-	newpri = (tskpri == TPRI_INI) ? p_tcb->p_tinib->ipriority
-										: INT_PRIORITY(tskpri);
 
 	t_lock_cpu();
 	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
@@ -506,6 +510,8 @@ chg_pri(ID tskid, PRI tskpri)
 		ercd = E_OBJ;
 	}
 	else {
+		newpri = (tskpri == TPRI_INI) ? p_tcb->p_tinib->ipriority
+											: INT_PRIORITY(tskpri);
 		if (change_priority(p_tcb, newpri)) {
 			dispatch();
 		}

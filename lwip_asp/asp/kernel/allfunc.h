@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Advanced Standard Profile Kernel
  * 
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2008 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: allfunc.h 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: allfunc.h 879 2008-04-11 10:38:16Z hiro $
  */
 
 /*
@@ -48,7 +48,6 @@
 /* startup.c */
 #define TOPPERS_sta_ker
 #define TOPPERS_ext_ker
-#define TOPPERS_kermem
 
 /* task.c */
 #define TOPPERS_tskini
@@ -81,8 +80,6 @@
 #define TOPPERS_sigtim
 
 /* task_manage.c */
-#define TOPPERS_acre_tsk
-#define TOPPERS_del_tsk
 #define TOPPERS_act_tsk
 #define TOPPERS_iact_tsk
 #define TOPPERS_can_act
@@ -108,7 +105,6 @@
 #define TOPPERS_dly_tsk
 
 /* task_except.c */
-#define TOPPERS_def_tex
 #define TOPPERS_ras_tex
 #define TOPPERS_iras_tex
 #define TOPPERS_dis_tex
@@ -118,8 +114,6 @@
 
 /* semaphore.c */
 #define TOPPERS_semini
-#define TOPPERS_acre_sem
-#define TOPPERS_del_sem
 #define TOPPERS_sig_sem
 #define TOPPERS_isig_sem
 #define TOPPERS_wai_sem
@@ -131,8 +125,6 @@
 /* eventflag.c */
 #define TOPPERS_flgini
 #define TOPPERS_flgcnd
-#define TOPPERS_acre_flg
-#define TOPPERS_del_flg
 #define TOPPERS_set_flg
 #define TOPPERS_iset_flg
 #define TOPPERS_clr_flg
@@ -150,8 +142,6 @@
 #define TOPPERS_dtqsnd
 #define TOPPERS_dtqfsnd
 #define TOPPERS_dtqrcv
-#define TOPPERS_acre_dtq
-#define TOPPERS_del_dtq
 #define TOPPERS_snd_dtq
 #define TOPPERS_psnd_dtq
 #define TOPPERS_ipsnd_dtq
@@ -170,8 +160,6 @@
 #define TOPPERS_pdqdeq
 #define TOPPERS_pdqsnd
 #define TOPPERS_pdqrcv
-#define TOPPERS_acre_pdq
-#define TOPPERS_del_pdq
 #define TOPPERS_snd_pdq
 #define TOPPERS_psnd_pdq
 #define TOPPERS_ipsnd_pdq
@@ -184,8 +172,6 @@
 
 /* mailbox.c */
 #define TOPPERS_mbxini
-#define TOPPERS_acre_mbx
-#define TOPPERS_del_mbx
 #define TOPPERS_snd_mbx
 #define TOPPERS_rcv_mbx
 #define TOPPERS_prcv_mbx
@@ -196,8 +182,6 @@
 /* mempfix.c */
 #define TOPPERS_mpfini
 #define TOPPERS_mpfget
-#define TOPPERS_acre_mpf
-#define TOPPERS_del_mpf
 #define TOPPERS_get_mpf
 #define TOPPERS_pget_mpf
 #define TOPPERS_tget_mpf
@@ -211,8 +195,6 @@
 
 /* cyclic.c */
 #define TOPPERS_cycini
-#define TOPPERS_acre_cyc
-#define TOPPERS_del_cyc
 #define TOPPERS_sta_cyc
 #define TOPPERS_stp_cyc
 #define TOPPERS_ref_cyc
@@ -220,8 +202,6 @@
 
 /* alarm.c */
 #define TOPPERS_almini
-#define TOPPERS_acre_alm
-#define TOPPERS_del_alm
 #define TOPPERS_sta_alm
 #define TOPPERS_ista_alm
 #define TOPPERS_stp_alm
@@ -247,10 +227,6 @@
 #define TOPPERS_sns_ker
 
 /* interrupt.c */
-#define TOPPERS_isrini
-#define TOPPERS_isrcal
-#define TOPPERS_acre_isr
-#define TOPPERS_del_isr
 #define TOPPERS_intini
 #define TOPPERS_dis_int
 #define TOPPERS_ena_int

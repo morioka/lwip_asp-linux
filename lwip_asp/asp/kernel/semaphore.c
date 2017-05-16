@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: semaphore.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: semaphore.c 2133 2011-06-26 03:14:51Z ertl-hiro $
  */
 
 /*
@@ -53,22 +53,6 @@
 /*
  *  トレースログマクロのデフォルト定義
  */
-#ifndef LOG_ACRE_SEM_ENTER
-#define LOG_ACRE_SEM_ENTER(pk_csem)
-#endif /* LOG_ACRE_SEM_ENTER */
-
-#ifndef LOG_ACRE_SEM_LEAVE
-#define LOG_ACRE_SEM_LEAVE(ercd)
-#endif /* LOG_ACRE_SEM_LEAVE */
-
-#ifndef LOG_DEL_SEM_ENTER
-#define LOG_DEL_SEM_ENTER(semid)
-#endif /* LOG_DEL_SEM_ENTER */
-
-#ifndef LOG_DEL_SEM_LEAVE
-#define LOG_DEL_SEM_LEAVE(ercd)
-#endif /* LOG_DEL_SEM_LEAVE */
-
 #ifndef LOG_SIG_SEM_ENTER
 #define LOG_SIG_SEM_ENTER(semid)
 #endif /* LOG_SIG_SEM_ENTER */
@@ -129,7 +113,6 @@
  *  セマフォの数
  */
 #define tnum_sem	((uint_t)(tmax_semid - TMIN_SEMID + 1))
-#define tnum_ssem	((uint_t)(tmax_ssemid - TMIN_SEMID + 1))
 
 /*
  *  セマフォIDからセマフォ管理ブロックを取り出すためのマクロ
@@ -137,124 +120,26 @@
 #define INDEX_SEM(semid)	((uint_t)((semid) - TMIN_SEMID))
 #define get_semcb(semid)	(&(semcb_table[INDEX_SEM(semid)]))
 
-#ifdef TOPPERS_semini
-
-/*
- *  使用していないセマフォ管理ブロックのリスト
- */
-QUEUE	free_semcb;
-
 /* 
  *  セマフォ機能の初期化
  */
+#ifdef TOPPERS_semini
+
 void
 initialize_semaphore(void)
 {
-	uint_t	i, j;
+	uint_t	i;
 	SEMCB	*p_semcb;
-	SEMINIB	*p_seminib;
 
-	for (p_semcb = semcb_table, i = 0; i < tnum_ssem; p_semcb++, i++) {
+	for (i = 0; i < tnum_sem; i++) {
+		p_semcb = &(semcb_table[i]);
 		queue_initialize(&(p_semcb->wait_queue));
 		p_semcb->p_seminib = &(seminib_table[i]);
 		p_semcb->semcnt = p_semcb->p_seminib->isemcnt;
 	}
-	queue_initialize(&free_semcb);
-	for (j = 0; i < tnum_sem; p_semcb++, i++, j++) {
-		p_seminib = &(aseminib_table[j]);
-		p_seminib->sematr = TA_NOEXS;
-		p_semcb->p_seminib = ((const SEMINIB *) p_seminib);
-		queue_insert_prev(&free_semcb, &(p_semcb->wait_queue));
-	}
 }
 
 #endif /* TOPPERS_semini */
-
-/*
- *  セマフォの生成
- */
-#ifdef TOPPERS_acre_sem
-
-ER_UINT
-acre_sem(const T_CSEM *pk_csem)
-{
-	SEMCB	*p_semcb;
-	SEMINIB	*p_seminib;
-	ER		ercd;
-
-	LOG_ACRE_SEM_ENTER(pk_csem);
-	CHECK_TSKCTX_UNL();
-	CHECK_RSATR(pk_csem->sematr, TA_TPRI);
-	CHECK_PAR(0 <= pk_csem->isemcnt && pk_csem->isemcnt <= pk_csem->maxsem);
-	CHECK_PAR(1 <= pk_csem->maxsem && pk_csem->maxsem <= TMAX_MAXSEM);
-
-	t_lock_cpu();
-	if (queue_empty(&free_semcb)) {
-		ercd = E_NOID;
-	}
-	else {
-		p_semcb = ((SEMCB *) queue_delete_next(&free_semcb));
-		p_seminib = (SEMINIB *)(p_semcb->p_seminib);
-		p_seminib->sematr = pk_csem->sematr;
-		p_seminib->isemcnt = pk_csem->isemcnt;
-		p_seminib->maxsem = pk_csem->maxsem;
-
-		queue_initialize(&(p_semcb->wait_queue));
-		p_semcb->semcnt = p_semcb->p_seminib->isemcnt;
-		ercd = SEMID(p_semcb);
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_ACRE_SEM_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_acre_sem */
-
-/*
- *  セマフォの削除
- */
-#ifdef TOPPERS_del_sem
-
-ER
-del_sem(ID semid)
-{
-	SEMCB	*p_semcb;
-	SEMINIB	*p_seminib;
-	bool_t	dspreq;
-	ER		ercd;
-
-	LOG_DEL_SEM_ENTER(semid);
-	CHECK_TSKCTX_UNL();
-	CHECK_SEMID(semid);
-	p_semcb = get_semcb(semid);
-
-	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (SEMID(p_semcb) > tmax_ssemid) {
-		dspreq = init_wait_queue(&(p_semcb->wait_queue));
-		p_seminib = (SEMINIB *)(p_semcb->p_seminib);
-		p_seminib->sematr = TA_NOEXS;
-		queue_insert_prev(&free_semcb, &(p_semcb->wait_queue));
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
-	}
-	else {
-		ercd = E_OBJ;
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_DEL_SEM_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_del_sem */
 
 /*
  *  セマフォ資源の返却
@@ -274,10 +159,7 @@ sig_sem(ID semid)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (!queue_empty(&(p_semcb->wait_queue))) {
+	if (!queue_empty(&(p_semcb->wait_queue))) {
 		p_tcb = (TCB *) queue_delete_next(&(p_semcb->wait_queue));
 		if (wait_complete(p_tcb)) {
 			dispatch();
@@ -318,10 +200,7 @@ isig_sem(ID semid)
 	p_semcb = get_semcb(semid);
 
 	i_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (!queue_empty(&(p_semcb->wait_queue))) {
+	if (!queue_empty(&(p_semcb->wait_queue))) {
 		p_tcb = (TCB *) queue_delete_next(&(p_semcb->wait_queue));
 		if (wait_complete(p_tcb)) {
 			reqflg = true;
@@ -362,10 +241,7 @@ wai_sem(ID semid)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_semcb->semcnt >= 1) {
+	if (p_semcb->semcnt >= 1) {
 		p_semcb->semcnt -= 1;
 		ercd = E_OK;
 	}
@@ -401,10 +277,7 @@ pol_sem(ID semid)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_semcb->semcnt >= 1) {
+	if (p_semcb->semcnt >= 1) {
 		p_semcb->semcnt -= 1;
 		ercd = E_OK;
 	}
@@ -440,10 +313,7 @@ twai_sem(ID semid, TMO tmout)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_semcb->semcnt >= 1) {
+	if (p_semcb->semcnt >= 1) {
 		p_semcb->semcnt -= 1;
 		ercd = E_OK;
 	}
@@ -484,17 +354,12 @@ ini_sem(ID semid)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
+	dspreq = init_wait_queue(&(p_semcb->wait_queue));
+	p_semcb->semcnt = p_semcb->p_seminib->isemcnt;
+	if (dspreq) {
+		dispatch();
 	}
-	else {
-		dspreq = init_wait_queue(&(p_semcb->wait_queue));
-		p_semcb->semcnt = p_semcb->p_seminib->isemcnt;
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
-	}
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -521,14 +386,9 @@ ref_sem(ID semid, T_RSEM *pk_rsem)
 	p_semcb = get_semcb(semid);
 
 	t_lock_cpu();
-	if (p_semcb->p_seminib->sematr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else {
-		pk_rsem->wtskid = wait_tskid(&(p_semcb->wait_queue));
-		pk_rsem->semcnt = p_semcb->semcnt;
-		ercd = E_OK;
-	}
+	pk_rsem->wtskid = wait_tskid(&(p_semcb->wait_queue));
+	pk_rsem->semcnt = p_semcb->semcnt;
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:

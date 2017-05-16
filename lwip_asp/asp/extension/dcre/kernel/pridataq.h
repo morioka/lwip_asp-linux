@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pridataq.h 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: pridataq.h 2515 2013-06-12 11:56:59Z ertl-hiro $
  */
 
 /*
@@ -47,7 +47,7 @@
 #ifndef TOPPERS_PRIDATAQ_H
 #define TOPPERS_PRIDATAQ_H
 
-#include <queue.h>
+#include "wait.h"
 
 /*
  *  優先度データ管理ブロック
@@ -154,12 +154,12 @@ extern void	dequeue_pridata(PDQCB *p_pdqcb, intptr_t *p_data, PRI *p_datapri);
  *  優先度データキューへのデータ送信
  */
 extern bool_t	send_pridata(PDQCB *p_pdqcb, intptr_t data,
-											PRI datapri, bool_t *p_reqdsp);
+											PRI datapri, bool_t *p_dspreq);
 
 /*
  *  優先度データキューからのデータ受信
  */
 extern bool_t	receive_pridata(PDQCB *p_pdqcb, intptr_t *p_data,
-											PRI *p_datapri, bool_t *p_reqdsp);
+											PRI *p_datapri, bool_t *p_dspreq);
 
 #endif /* TOPPERS_PRIDATAQ_H */

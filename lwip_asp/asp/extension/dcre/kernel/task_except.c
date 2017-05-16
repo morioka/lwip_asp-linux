@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_except.c 2023 2011-01-02 08:59:06Z ertl-hiro $
+ *  $Id: task_except.c 2635 2014-04-13 12:20:20Z ertl-hiro $
  */
 
 /*
@@ -131,29 +131,34 @@ def_tex(ID tskid, const T_DTEX *pk_dtex)
 	p_tinib = (TINIB *)(p_tcb->p_tinib);
 
 	t_lock_cpu();
-	if (TSKID(p_tcb) <= tmax_stskid) {
-		ercd = E_OBJ;
+	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
+		ercd = E_NOEXS;
 	}
-	else if (pk_dtex->texrtn != NULL) {
-		if (p_tinib->texrtn != NULL) {
-			ercd = E_OBJ;
+	else if (TSKID(p_tcb) > tmax_stskid) {
+		if (pk_dtex->texrtn != NULL) {
+			if (p_tinib->texrtn != NULL) {
+				ercd = E_OBJ;
+			}
+			else {
+				p_tinib->texatr = pk_dtex->texatr;
+				p_tinib->texrtn = pk_dtex->texrtn;
+				ercd = E_OK;
+			}
 		}
 		else {
-			p_tinib->texatr = pk_dtex->texatr;
-			p_tinib->texrtn = pk_dtex->texrtn;
-			ercd = E_OK;
+			if (p_tinib->texrtn != NULL) {
+				p_tinib->texrtn = NULL;
+				p_tcb->enatex = false;
+				p_tcb->texptn = 0U;
+				ercd = E_OK;
+			}
+			else {
+				ercd = E_OBJ;
+			}
 		}
 	}
 	else {
-		if (p_tinib->texrtn != NULL) {
-			p_tinib->texrtn = NULL;
-			p_tcb->enatex = false;
-			p_tcb->texptn = 0U;
-			ercd = E_OK;
-		}
-		else {
-			ercd = E_OBJ;
-		}
+		ercd = E_OBJ;
 	}
 	t_unlock_cpu();
 

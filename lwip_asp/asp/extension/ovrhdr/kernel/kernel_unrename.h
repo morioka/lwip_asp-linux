@@ -117,6 +117,7 @@
 /*
  *  overrun.c
  */
+#undef ovrtimer_flag
 #undef initialize_overrun
 #undef ovrtimer_start
 #undef ovrtimer_stop
@@ -149,14 +150,14 @@
 #undef flginib_table
 #undef flgcb_table
 #undef tmax_dtqid
-#undef dtqcb_table
 #undef dtqinib_table
+#undef dtqcb_table
 #undef tmax_pdqid
-#undef pdqcb_table
 #undef pdqinib_table
+#undef pdqcb_table
 #undef tmax_mbxid
-#undef mbxcb_table
 #undef mbxinib_table
+#undef mbxcb_table
 #undef tmax_mpfid
 #undef mpfinib_table
 #undef mpfcb_table
@@ -294,6 +295,7 @@
 /*
  *  overrun.c
  */
+#undef _ovrtimer_flag
 #undef _initialize_overrun
 #undef _ovrtimer_start
 #undef _ovrtimer_stop
@@ -326,14 +328,14 @@
 #undef _flginib_table
 #undef _flgcb_table
 #undef _tmax_dtqid
-#undef _dtqcb_table
 #undef _dtqinib_table
+#undef _dtqcb_table
 #undef _tmax_pdqid
-#undef _pdqcb_table
 #undef _pdqinib_table
+#undef _pdqcb_table
 #undef _tmax_mbxid
-#undef _mbxcb_table
 #undef _mbxinib_table
+#undef _mbxcb_table
 #undef _tmax_mpfid
 #undef _mpfinib_table
 #undef _mpfcb_table

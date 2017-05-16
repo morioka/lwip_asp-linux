@@ -102,6 +102,7 @@ namespace toppers
         std::string text;     //!< 実引数の字面
         boost::optional< std::tr1::intmax_t > value;  //!< 実引数の値
         std::string string;
+        int order;            //!< リスト形式パラメータの連番
       };
       typedef std::vector< parameter > parameter_container;
       typedef parameter_container::iterator iterator;
@@ -210,7 +211,7 @@ namespace toppers
                     std::string name( iter->at( info->id_pos ).text );
                     if ( !id_res[ id ].empty() )
                     {
-                      fatal( _( "%1% `%2%\' in %3% is duplicated" ), iter->at( info->id_pos ).symbol.c_str() + 1, id, info->api_name );
+                      fatal( _( "E_OBJ: %1% `%2%\' in %3% is duplicated" ), iter->at( info->id_pos ).symbol.c_str() + 1, id, info->api_name );
                     }
                     id_res[ id ] = name;
                   }
@@ -269,7 +270,7 @@ namespace toppers
             {
               if ( id_map[ name ] < 1 )
               {
-                fatal( iter->line(), _( "`%1%\' is undefined" ), iter->at( info->id_pos ).text );
+                fatal( iter->line(), _( "E_NOEXS: `%1%\' is undefined" ), iter->at( info->id_pos ).text );
               }
               std::set< std::string >& set = slave_id_set[ info->api_name ];
               if ( set.find( name ) != set.end() )  // DEF_TEX重複定義の判定

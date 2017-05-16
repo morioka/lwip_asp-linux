@@ -130,7 +130,7 @@
  */
 #define free_isrcb					_kernel_free_isrcb
 #define initialize_isr				_kernel_initialize_isr
-#define inthdr_call_isr				_kernel_inthdr_call_isr
+#define call_isr					_kernel_call_isr
 #define initialize_interrupt		_kernel_initialize_interrupt
 
 /*
@@ -161,12 +161,12 @@
 #define aflginib_table				_kernel_aflginib_table
 #define flgcb_table					_kernel_flgcb_table
 #define tmax_dtqid					_kernel_tmax_dtqid
-#define tmax_adtqid					_kernel_tmax_adtqid
+#define tmax_sdtqid					_kernel_tmax_sdtqid
 #define dtqinib_table				_kernel_dtqinib_table
-#define sdtqinib_table				_kernel_sdtqinib_table
+#define adtqinib_table				_kernel_adtqinib_table
 #define dtqcb_table					_kernel_dtqcb_table
 #define tmax_pdqid					_kernel_tmax_pdqid
-#define tmax_apdqid					_kernel_tmax_apdqid
+#define tmax_spdqid					_kernel_tmax_spdqid
 #define pdqinib_table				_kernel_pdqinib_table
 #define apdqinib_table				_kernel_apdqinib_table
 #define pdqcb_table					_kernel_pdqcb_table
@@ -341,7 +341,7 @@
  */
 #define _free_isrcb					__kernel_free_isrcb
 #define _initialize_isr				__kernel_initialize_isr
-#define _inthdr_call_isr			__kernel_inthdr_call_isr
+#define _call_isr					__kernel_call_isr
 #define _initialize_interrupt		__kernel_initialize_interrupt
 
 /*
@@ -372,12 +372,12 @@
 #define _aflginib_table				__kernel_aflginib_table
 #define _flgcb_table				__kernel_flgcb_table
 #define _tmax_dtqid					__kernel_tmax_dtqid
-#define _tmax_adtqid				__kernel_tmax_adtqid
+#define _tmax_sdtqid				__kernel_tmax_sdtqid
 #define _dtqinib_table				__kernel_dtqinib_table
-#define _sdtqinib_table				__kernel_sdtqinib_table
+#define _adtqinib_table				__kernel_adtqinib_table
 #define _dtqcb_table				__kernel_dtqcb_table
 #define _tmax_pdqid					__kernel_tmax_pdqid
-#define _tmax_apdqid				__kernel_tmax_apdqid
+#define _tmax_spdqid				__kernel_tmax_spdqid
 #define _pdqinib_table				__kernel_pdqinib_table
 #define _apdqinib_table				__kernel_apdqinib_table
 #define _pdqcb_table				__kernel_pdqcb_table

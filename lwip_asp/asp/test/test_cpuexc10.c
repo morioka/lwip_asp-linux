@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2015 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_cpuexc10.c 2005 2010-12-31 04:20:08Z ertl-hiro $
+ *  $Id: test_cpuexc10.c 2670 2015-01-07 06:32:07Z ertl-hiro $
  */
 
 /* 
@@ -105,9 +105,11 @@ task1(intptr_t exinf)
 {
 	ER		ercd;
 
+	test_start(__FILE__);
+
 	check_point(1);
 	check_state(false, false, TIPM_ENAALL, false, false, true);
-	ercd = chg_ipm(TMAX_INTPRI - 1);
+	ercd = chg_ipm(TMIN_INTPRI - 1);
 	if (ercd == E_PAR) {
 		syslog_0(LOG_NOTICE, "This test program is not necessary.");
 		ext_ker();
@@ -117,11 +119,11 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_point(2);
-	check_state(false, false, TMAX_INTPRI - 1, false, true, false);
+	check_state(false, false, TMIN_INTPRI - 1, false, true, false);
 	RAISE_CPU_EXCEPTION;
 
 	check_point(5);
-	check_state(false, false, TMAX_INTPRI - 1, false, true, false);
+	check_state(false, false, TMIN_INTPRI - 1, false, true, false);
 
 	check_finish(6);
 }

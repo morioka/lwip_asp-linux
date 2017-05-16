@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pridataq.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  $Id: pridataq.c 2639 2014-04-16 23:04:23Z ertl-hiro $
  */
 
 /*
@@ -171,7 +171,8 @@ initialize_pridataq(void)
 	PDQCB	*p_pdqcb;
 	PDQINIB	*p_pdqinib;
 
-	for (p_pdqcb = pdqcb_table, i = 0; i < tnum_spdq; p_pdqcb++, i++) {
+	for (i = 0; i < tnum_spdq; i++) {
+		p_pdqcb = &(pdqcb_table[i]);
 		queue_initialize(&(p_pdqcb->swait_queue));
 		p_pdqcb->p_pdqinib = &(pdqinib_table[i]);
 		queue_initialize(&(p_pdqcb->rwait_queue));
@@ -181,7 +182,8 @@ initialize_pridataq(void)
 		p_pdqcb->p_freelist = NULL;
 	}
 	queue_initialize(&free_pdqcb);
-	for (j = 0; i < tnum_pdq; p_pdqcb++, i++, j++) {
+	for (j = 0; i < tnum_pdq; i++, j++) {
+		p_pdqcb = &(pdqcb_table[i]);
 		p_pdqinib = &(apdqinib_table[j]);
 		p_pdqinib->pdqatr = TA_NOEXS;
 		p_pdqcb->p_pdqinib = ((const PDQINIB *) p_pdqinib);
@@ -190,115 +192,6 @@ initialize_pridataq(void)
 }
 
 #endif /* TOPPERS_pdqini */
-
-/*
- *  優先度データキューの生成
- */
-#ifdef TOPPERS_acre_pdq
-
-ER_UINT
-acre_pdq(const T_CPDQ *pk_cpdq)
-{
-	PDQCB	*p_pdqcb;
-	PDQINIB	*p_pdqinib;
-	ATR		pdqatr;
-	PDQMB	*p_pdqmb;
-	ER		ercd;
-
-	LOG_ACRE_PDQ_ENTER(pk_cpdq);
-	CHECK_TSKCTX_UNL();
-	CHECK_RSATR(pk_cpdq->pdqatr, TA_TPRI);
-	CHECK_DPRI(pk_cpdq->maxdpri);
-	pdqatr = pk_cpdq->pdqatr;
-	p_pdqmb = pk_cpdq->pdqmb;
-
-	t_lock_cpu();
-	if (queue_empty(&free_pdqcb)) {
-		ercd = E_NOID;
-	}
-	else {
-		if (pk_cpdq->pdqcnt != 0 && p_pdqmb == NULL) {
-			p_pdqmb = kernel_malloc(sizeof(PDQMB) * pk_cpdq->pdqcnt);
-			pdqatr |= TA_MBALLOC;
-		}
-		if (pk_cpdq->pdqcnt != 0 && p_pdqmb == NULL) {
-			ercd = E_NOMEM;
-		}
-		else {
-			p_pdqcb = ((PDQCB *) queue_delete_next(&free_pdqcb));
-			p_pdqinib = (PDQINIB *)(p_pdqcb->p_pdqinib);
-			p_pdqinib->pdqatr = pdqatr;
-			p_pdqinib->pdqcnt = pk_cpdq->pdqcnt;
-			p_pdqinib->maxdpri = pk_cpdq->maxdpri;
-			p_pdqinib->p_pdqmb = p_pdqmb;
-
-			queue_initialize(&(p_pdqcb->swait_queue));
-			queue_initialize(&(p_pdqcb->rwait_queue));
-			p_pdqcb->count = 0U;
-			p_pdqcb->p_head = NULL;
-			p_pdqcb->unused = 0U;
-			p_pdqcb->p_freelist = NULL;
-			ercd = PDQID(p_pdqcb);
-		}
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_ACRE_PDQ_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_acre_pdq */
-
-/*
- *  優先度データキューの削除
- */
-#ifdef TOPPERS_del_pdq
-
-ER
-del_pdq(ID pdqid)
-{
-	PDQCB	*p_pdqcb;
-	PDQINIB	*p_pdqinib;
-	bool_t	dspreq;
-	ER		ercd;
-
-	LOG_DEL_PDQ_ENTER(pdqid);
-	CHECK_TSKCTX_UNL();
-	CHECK_PDQID(pdqid);
-	p_pdqcb = get_pdqcb(pdqid);
-
-	t_lock_cpu();
-	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (PDQID(p_pdqcb) > tmax_spdqid) {
-		dspreq = init_wait_queue(&(p_pdqcb->swait_queue));
-		if (init_wait_queue(&(p_pdqcb->rwait_queue))) {
-			dspreq = true;
-		};
-		p_pdqinib = (PDQINIB *)(p_pdqcb->p_pdqinib);
-		if ((p_pdqinib->pdqatr & TA_MBALLOC) != 0U) {
-			kernel_free(p_pdqinib->p_pdqmb);
-		}
-		p_pdqinib->pdqatr = TA_NOEXS;
-		queue_insert_prev(&free_pdqcb, &(p_pdqcb->swait_queue));
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
-	}
-	else {
-		ercd = E_OBJ;
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_DEL_PDQ_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_del_pdq */
 
 /*
  *  優先度データキュー管理領域へのデータの格納
@@ -366,7 +259,7 @@ dequeue_pridata(PDQCB *p_pdqcb, intptr_t *p_data, PRI *p_datapri)
 #ifdef TOPPERS_pdqsnd
 
 bool_t
-send_pridata(PDQCB *p_pdqcb, intptr_t data, PRI datapri, bool_t *p_reqdsp)
+send_pridata(PDQCB *p_pdqcb, intptr_t data, PRI datapri, bool_t *p_dspreq)
 {
 	TCB		*p_tcb;
 
@@ -374,12 +267,12 @@ send_pridata(PDQCB *p_pdqcb, intptr_t data, PRI datapri, bool_t *p_reqdsp)
 		p_tcb = (TCB *) queue_delete_next(&(p_pdqcb->rwait_queue));
 		((WINFO_PDQ *)(p_tcb->p_winfo))->data = data;
 		((WINFO_PDQ *)(p_tcb->p_winfo))->datapri = datapri;
-		*p_reqdsp = wait_complete(p_tcb);
+		*p_dspreq = wait_complete(p_tcb);
 		return(true);
 	}
 	else if (p_pdqcb->count < p_pdqcb->p_pdqinib->pdqcnt) {
 		enqueue_pridata(p_pdqcb, data, datapri);
-		*p_reqdsp = false;
+		*p_dspreq = false;
 		return(true);
 	}
 	else {
@@ -396,7 +289,7 @@ send_pridata(PDQCB *p_pdqcb, intptr_t data, PRI datapri, bool_t *p_reqdsp)
 
 bool_t
 receive_pridata(PDQCB *p_pdqcb, intptr_t *p_data,
-									PRI *p_datapri, bool_t *p_reqdsp)
+									PRI *p_datapri, bool_t *p_dspreq)
 {
 	TCB		*p_tcb;
 	intptr_t data;
@@ -409,10 +302,10 @@ receive_pridata(PDQCB *p_pdqcb, intptr_t *p_data,
 			data = ((WINFO_PDQ *)(p_tcb->p_winfo))->data;
 			datapri = ((WINFO_PDQ *)(p_tcb->p_winfo))->datapri;
 			enqueue_pridata(p_pdqcb, data, datapri);
-			*p_reqdsp = wait_complete(p_tcb);
+			*p_dspreq = wait_complete(p_tcb);
 		}
 		else {
-			*p_reqdsp = false;
+			*p_dspreq = false;
 		}
 		return(true);
 	}
@@ -420,7 +313,7 @@ receive_pridata(PDQCB *p_pdqcb, intptr_t *p_data,
 		p_tcb = (TCB *) queue_delete_next(&(p_pdqcb->swait_queue));
 		*p_data = ((WINFO_PDQ *)(p_tcb->p_winfo))->data;
 		*p_datapri = ((WINFO_PDQ *)(p_tcb->p_winfo))->datapri;
-		*p_reqdsp = wait_complete(p_tcb);
+		*p_dspreq = wait_complete(p_tcb);
 		return(true);
 	}
 	else {
@@ -429,6 +322,118 @@ receive_pridata(PDQCB *p_pdqcb, intptr_t *p_data,
 }
 
 #endif /* TOPPERS_pdqrcv */
+
+/*
+ *  優先度データキューの生成
+ */
+#ifdef TOPPERS_acre_pdq
+
+ER_UINT
+acre_pdq(const T_CPDQ *pk_cpdq)
+{
+	PDQCB	*p_pdqcb;
+	PDQINIB	*p_pdqinib;
+	ATR		pdqatr;
+	PDQMB	*p_pdqmb;
+	ER		ercd;
+
+	LOG_ACRE_PDQ_ENTER(pk_cpdq);
+	CHECK_TSKCTX_UNL();
+	CHECK_RSATR(pk_cpdq->pdqatr, TA_TPRI);
+	CHECK_DPRI(pk_cpdq->maxdpri);
+	if (pk_cpdq->pdqmb != NULL) {
+		CHECK_ALIGN_MB(pk_cpdq->pdqmb);
+	}
+	pdqatr = pk_cpdq->pdqatr;
+	p_pdqmb = pk_cpdq->pdqmb;
+
+	t_lock_cpu();
+	if (tnum_pdq == 0 || queue_empty(&free_pdqcb)) {
+		ercd = E_NOID;
+	}
+	else {
+		if (pk_cpdq->pdqcnt != 0 && p_pdqmb == NULL) {
+			p_pdqmb = kernel_malloc(sizeof(PDQMB) * pk_cpdq->pdqcnt);
+			pdqatr |= TA_MBALLOC;
+		}
+		if (pk_cpdq->pdqcnt != 0 && p_pdqmb == NULL) {
+			ercd = E_NOMEM;
+		}
+		else {
+			p_pdqcb = ((PDQCB *) queue_delete_next(&free_pdqcb));
+			p_pdqinib = (PDQINIB *)(p_pdqcb->p_pdqinib);
+			p_pdqinib->pdqatr = pdqatr;
+			p_pdqinib->pdqcnt = pk_cpdq->pdqcnt;
+			p_pdqinib->maxdpri = pk_cpdq->maxdpri;
+			p_pdqinib->p_pdqmb = p_pdqmb;
+
+			queue_initialize(&(p_pdqcb->swait_queue));
+			queue_initialize(&(p_pdqcb->rwait_queue));
+			p_pdqcb->count = 0U;
+			p_pdqcb->p_head = NULL;
+			p_pdqcb->unused = 0U;
+			p_pdqcb->p_freelist = NULL;
+			ercd = PDQID(p_pdqcb);
+		}
+	}
+	t_unlock_cpu();
+
+  error_exit:
+	LOG_ACRE_PDQ_LEAVE(ercd);
+	return(ercd);
+}
+
+#endif /* TOPPERS_acre_pdq */
+
+/*
+ *  優先度データキューの削除
+ */
+#ifdef TOPPERS_del_pdq
+
+ER
+del_pdq(ID pdqid)
+{
+	PDQCB	*p_pdqcb;
+	PDQINIB	*p_pdqinib;
+	bool_t	dspreq;
+	ER		ercd;
+
+	LOG_DEL_PDQ_ENTER(pdqid);
+	CHECK_TSKCTX_UNL();
+	CHECK_PDQID(pdqid);
+	p_pdqcb = get_pdqcb(pdqid);
+
+	t_lock_cpu();
+	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
+		ercd = E_NOEXS;
+	}
+	else if (PDQID(p_pdqcb) > tmax_spdqid) {
+		dspreq = init_wait_queue(&(p_pdqcb->swait_queue));
+		if (init_wait_queue(&(p_pdqcb->rwait_queue))) {
+			dspreq = true;
+		}
+		p_pdqinib = (PDQINIB *)(p_pdqcb->p_pdqinib);
+		if ((p_pdqinib->pdqatr & TA_MBALLOC) != 0U) {
+			kernel_free(p_pdqinib->p_pdqmb);
+		}
+		p_pdqinib->pdqatr = TA_NOEXS;
+		queue_insert_prev(&free_pdqcb, &(p_pdqcb->swait_queue));
+		if (dspreq) {
+			dispatch();
+		}
+		ercd = E_OK;
+	}
+	else {
+		ercd = E_OBJ;
+	}
+	t_unlock_cpu();
+
+  error_exit:
+	LOG_DEL_PDQ_LEAVE(ercd);
+	return(ercd);
+}
+
+#endif /* TOPPERS_del_pdq */
 
 /*
  *  優先度データキューへの送信
@@ -440,21 +445,24 @@ snd_pdq(ID pdqid, intptr_t data, PRI datapri)
 {
 	PDQCB	*p_pdqcb;
 	WINFO_PDQ winfo_pdq;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_SND_PDQ_ENTER(pdqid, data, datapri);
 	CHECK_DISPATCH();
 	CHECK_PDQID(pdqid);
 	p_pdqcb = get_pdqcb(pdqid);
-	CHECK_PAR(TMIN_DPRI <= datapri && datapri <= p_pdqcb->p_pdqinib->maxdpri);
+	CHECK_PAR(TMIN_DPRI <= datapri);
 
 	t_lock_cpu();
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (send_pridata(p_pdqcb, data, datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (!(datapri <= p_pdqcb->p_pdqinib->maxdpri)) {
+		ercd = E_PAR;
+	}
+	else if (send_pridata(p_pdqcb, data, datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;
@@ -485,21 +493,24 @@ ER
 psnd_pdq(ID pdqid, intptr_t data, PRI datapri)
 {
 	PDQCB	*p_pdqcb;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_PSND_PDQ_ENTER(pdqid, data, datapri);
 	CHECK_TSKCTX_UNL();
 	CHECK_PDQID(pdqid);
 	p_pdqcb = get_pdqcb(pdqid);
-	CHECK_PAR(TMIN_DPRI <= datapri && datapri <= p_pdqcb->p_pdqinib->maxdpri);
+	CHECK_PAR(TMIN_DPRI <= datapri);
 
 	t_lock_cpu();
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (send_pridata(p_pdqcb, data, datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (!(datapri <= p_pdqcb->p_pdqinib->maxdpri)) {
+		ercd = E_PAR;
+	}
+	else if (send_pridata(p_pdqcb, data, datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;
@@ -525,21 +536,24 @@ ER
 ipsnd_pdq(ID pdqid, intptr_t data, PRI datapri)
 {
 	PDQCB	*p_pdqcb;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_IPSND_PDQ_ENTER(pdqid, data, datapri);
 	CHECK_INTCTX_UNL();
 	CHECK_PDQID(pdqid);
 	p_pdqcb = get_pdqcb(pdqid);
-	CHECK_PAR(TMIN_DPRI <= datapri && datapri <= p_pdqcb->p_pdqinib->maxdpri);
+	CHECK_PAR(TMIN_DPRI <= datapri);
 
 	i_lock_cpu();
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (send_pridata(p_pdqcb, data, datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (!(datapri <= p_pdqcb->p_pdqinib->maxdpri)) {
+		ercd = E_PAR;
+	}
+	else if (send_pridata(p_pdqcb, data, datapri, &dspreq)) {
+		if (dspreq) {
 			reqflg = true;
 		}
 		ercd = E_OK;
@@ -567,7 +581,7 @@ tsnd_pdq(ID pdqid, intptr_t data, PRI datapri, TMO tmout)
 	PDQCB	*p_pdqcb;
 	WINFO_PDQ winfo_pdq;
 	TMEVTB	tmevtb;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_TSND_PDQ_ENTER(pdqid, data, datapri, tmout);
@@ -575,14 +589,17 @@ tsnd_pdq(ID pdqid, intptr_t data, PRI datapri, TMO tmout)
 	CHECK_PDQID(pdqid);
 	CHECK_TMOUT(tmout);
 	p_pdqcb = get_pdqcb(pdqid);
-	CHECK_PAR(TMIN_DPRI <= datapri && datapri <= p_pdqcb->p_pdqinib->maxdpri);
+	CHECK_PAR(TMIN_DPRI <= datapri);
 
 	t_lock_cpu();
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (send_pridata(p_pdqcb, data, datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (!(datapri <= p_pdqcb->p_pdqinib->maxdpri)) {
+		ercd = E_PAR;
+	}
+	else if (send_pridata(p_pdqcb, data, datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;
@@ -618,7 +635,7 @@ rcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri)
 {
 	PDQCB	*p_pdqcb;
 	WINFO_PDQ winfo_pdq;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_RCV_PDQ_ENTER(pdqid, p_data, p_datapri);
@@ -630,8 +647,8 @@ rcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri)
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;
@@ -667,7 +684,7 @@ ER
 prcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri)
 {
 	PDQCB	*p_pdqcb;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_PRCV_PDQ_ENTER(pdqid, p_data, p_datapri);
@@ -679,8 +696,8 @@ prcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri)
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;
@@ -708,7 +725,7 @@ trcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri, TMO tmout)
 	PDQCB	*p_pdqcb;
 	WINFO_PDQ winfo_pdq;
 	TMEVTB	tmevtb;
-	bool_t	reqdsp;
+	bool_t	dspreq;
 	ER		ercd;
 
 	LOG_TRCV_PDQ_ENTER(pdqid, p_data, p_datapri, tmout);
@@ -721,8 +738,8 @@ trcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri, TMO tmout)
 	if (p_pdqcb->p_pdqinib->pdqatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &reqdsp)) {
-		if (reqdsp) {
+	else if (receive_pridata(p_pdqcb, p_data, p_datapri, &dspreq)) {
+		if (dspreq) {
 			dispatch();
 		}
 		ercd = E_OK;

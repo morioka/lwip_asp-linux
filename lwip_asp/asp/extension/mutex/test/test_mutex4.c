@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mutex4.c 1696 2010-01-01 16:01:25Z ertl-hiro $
+ *  $Id: test_mutex4.c 2593 2014-01-02 06:29:10Z ertl-hiro $
  */
 
 /* 
@@ -355,18 +355,21 @@
 
 #include <kernel.h>
 #include <t_syslog.h>
-#include "syssvc/logtask.h"
 #include "kernel_cfg.h"
 #include "test_lib.h"
 #include "test_mutex4.h"
 
 extern ER	bit_mutex(void);
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
+
+	test_start(__FILE__);
 
 	set_bit_func(bit_mutex);
 
@@ -387,6 +390,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(4);
@@ -400,6 +404,7 @@ task1(intptr_t exinf)
 	check_point(8);
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(9);
@@ -420,6 +425,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(13);
@@ -452,6 +458,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(23);
@@ -488,6 +495,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(34);
@@ -520,6 +528,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(44);
@@ -550,6 +559,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TASK2, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(54);
@@ -566,6 +576,7 @@ task1(intptr_t exinf)
 
 	ercd = get_pri(TASK2, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(59);
@@ -577,14 +588,13 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(67);
-
 	check_point(0);
 }
 
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
 
 	check_point(14);
@@ -621,6 +631,7 @@ task2(intptr_t exinf)
 
 	ercd = get_pri(TASK1, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(65);
@@ -632,7 +643,7 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(16);
 	ercd = wup_tsk(TASK1);
@@ -667,7 +678,7 @@ task3(intptr_t exinf)
 void
 task4(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(6);
 	ercd = loc_mtx(MTX1);
@@ -691,7 +702,7 @@ task4(intptr_t exinf)
 void
 task5(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(37);
 	ercd = wup_tsk(TASK1);

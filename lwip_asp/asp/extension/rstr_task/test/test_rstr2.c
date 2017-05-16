@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2010-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_rstr2.c 1887 2010-08-06 06:15:19Z ertl-hiro $
+ *  $Id: test_rstr2.c 2537 2013-10-13 14:20:09Z ertl-hiro $
  */
 
 /* 
@@ -108,10 +108,14 @@
 #include "kernel_cfg.h"
 #include "test_rstr1.h"
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
+
+	test_start(__FILE__);
 
 	check_point(1);
 	ercd = act_tsk(TASK2);
@@ -122,19 +126,19 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(21);
-
 	check_point(0);
 }
 
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
 
 	check_point(3);
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(4);
@@ -144,6 +148,7 @@ task2(intptr_t exinf)
 	check_point(5);
 	ercd = get_pri(TSK_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	check_point(6);
@@ -200,12 +205,13 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
 
 	check_point(9);
 	ercd = get_pri(TASK2, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == MID_PRIORITY);
 
 	check_point(10);

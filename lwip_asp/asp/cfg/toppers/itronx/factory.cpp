@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2011 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -56,6 +56,135 @@ namespace toppers
   {
     namespace
     {
+      /*!
+       *  \brief  オブジェクトID番号の割付け
+       *  \param[in]  api_map   ソースに記述された静的APIを登録したコンテナ
+       */
+      void assign_id( toppers::itronx::cfg1_out::static_api_map& api_map )
+      {
+        using namespace toppers;
+        using namespace toppers::itronx;
+
+        std::string id_input_file( get_global_string( "id-input-file" ) );
+        if ( id_input_file.empty() )  // --id-input-file オプションが指定されていない場合...
+        {
+          for ( cfg1_out::static_api_map::iterator iter( api_map.begin() ), last( api_map.end() );
+                iter != last;
+                ++iter )
+          {
+            static_api::assign_id( iter->second.begin(), iter->second.end() );
+          }
+        }
+        else  // --id-input-file オプションが指定されている場合...
+        {
+          typedef std::map< std::string, std::pair< long, bool > > id_map_t;
+          id_map_t id_map;
+          std::ifstream ifs( id_input_file.c_str() );
+          while ( ifs )
+          {
+            std::string linebuf;
+            std::getline( ifs, linebuf );
+            if ( ifs.bad() )
+            {
+              fatal( _( "I/O error" ) );
+            }
+            if ( linebuf.empty() || linebuf == "\r" )
+            {
+              break;
+            }
+
+            std::istringstream iss( linebuf );
+            std::string name;
+            iss >> name;
+            if ( iss.fail() )
+            {
+              fatal( _( "id file `%1%\' is invalid" ), id_input_file );
+            }
+
+            long value;
+            iss >> value;
+            if ( iss.fail() )
+            {
+              fatal( _( "id file `%1%\' is invalid" ), id_input_file );
+            }
+
+            if ( id_map.find( name ) != id_map.end() )
+            {
+              fatal( _( "E_OBJ: `%1%\' is duplicated" ), name );
+            }
+            else
+            {
+              id_map[ name ] = std::make_pair( value, false );
+            }
+          }
+
+          for ( cfg1_out::static_api_map::iterator iter( api_map.begin() ), last( api_map.end() );
+                iter != last;
+                ++iter )
+          {
+            for ( std::vector< static_api >::iterator iter2( iter->second.begin() ), last2( iter->second.end() );
+                  iter2 != last2;
+                  ++iter2 )
+            {
+              static_api::info const* info = iter2->get_info();
+              if ( info->id_pos >= 0 )
+              {
+                std::string name( iter2->at( info->id_pos ).text );
+                std::string symbol( iter2->at( info->id_pos ).symbol );
+                if ( !info->slave && symbol[0] == '#' )
+                {
+                  id_map_t::iterator hit( id_map.find( name ) );
+                  if ( hit != id_map.end() )
+                  {
+                    long id_value = hit->second.first;
+                    if ( id_value > 0 )
+                    {
+                      iter2->at( info->id_pos ).value = id_value;
+                      hit->second.second = true;
+                    }
+                  }
+                }
+              }
+            }
+            static_api::assign_id( iter->second.begin(), iter->second.end() );
+          }
+
+          for ( id_map_t::const_iterator iter( id_map.begin() ), last( id_map.end() ); iter != last; ++iter )  // 残り物があれば...
+          {
+            if ( !iter->second.second )
+            {
+              warning( _( "object identifier `%1%\' is not used" ), iter->first );
+            }
+          }
+        }
+
+        // --id-output-file オプションが指定されている場合
+        std::string id_output_file( get_global_string ( "id-output-file" ) );
+        if ( !id_output_file.empty() )
+        {
+          std::ofstream ofs( id_output_file.c_str() );
+          for ( cfg1_out::static_api_map::iterator iter( api_map.begin() ), last( api_map.end() );
+            iter != last;
+            ++iter )
+          {
+            for ( std::vector< static_api >::const_iterator iter2( iter->second.begin() ), last2( iter->second.end() );
+                  iter2 != last2;
+                  ++iter2 )
+            {
+              static_api::info const* info = iter2->get_info();
+              if ( info->id_pos >= 0 )
+              {
+                std::string name( iter2->at( info->id_pos ).text );
+                std::string symbol( iter2->at( info->id_pos ).symbol );
+                if ( !info->slave && symbol[0] == '#' )
+                {
+                  ofs << name << '\t' << iter2->at( info->id_pos ).value.get() << std::endl;
+                }
+              }
+            }
+          }
+        }
+      }
 
       // カーネルオブジェクト生成・定義用静的APIの各パラメータをマクロプロセッサの変数として設定する。
       void set_object_vars( cfg1_out::static_api_map const& api_map, macro_processor& mproc )
@@ -113,15 +242,34 @@ namespace toppers
             }
 
             // 各パラメータ
+            var_t var;
+            std::string prev_name;
             for ( static_api::const_iterator api_iter( v_iter->begin() ), api_last( v_iter->end() );
                   api_iter != api_last;
                   ++api_iter )
             {
-              std::string name( toppers::toupper( ( boost::format( "%s.%s" ) % info->type % ( api_iter->symbol.c_str() + 1 ) ).str() ) );
+              bool is_param_list = false;
+
+              char const* type_name = ( api_iter->symbol[0] == '*'  && info->slave ) ? info->api_name : info->type;
+              std::string name( toppers::toupper( ( boost::format( "%s.%s" ) % type_name % ( api_iter->symbol.c_str() + 1 ) ).str() ) );
               // 末尾の ? を除去
               if ( *name.rbegin() == '\?' ) 
               {
                 name.resize( name.size() - 1 );
+              }
+              // 末尾の ... を除去
+              if ( name.size() > 3 && name.substr( name.size() - 3 ) == "..." )
+              {
+                name.resize( name.size() - 3 );
+                is_param_list = true;
+              }
+
+              if (!var.empty())
+              {
+                if (prev_name != name)
+                {
+                  var.clear();
+                }
               }
 
               element e;
@@ -141,7 +289,24 @@ namespace toppers
                   continue;
                 }
               }
-              mproc.set_var( name, id, var_t( 1, e ) );
+              var.push_back(e);
+              mproc.set_var( name, id, var );
+
+              prev_name = name;
+
+              // 下位互換性のため、symbol + order 名の変数を登録
+              if (is_param_list)
+              {
+                mproc.set_var( name + boost::lexical_cast< std::string >( api_iter->order ), id, var_t( 1, e ) );
+              }
+            }
+
+            // 静的APIの名称
+            if ( !info->slave ) {
+              element e;
+              e.s = info->api_name;
+              std::string type( toppers::toupper( info->type ) );
+              mproc.set_var( type + ".APINAME", id, var_t( 1, e ) );
             }
 
             // 静的APIが出現した行番号
@@ -149,12 +314,7 @@ namespace toppers
               element e;
               e.s = v_iter->line().file;
               e.i = v_iter->line().line;
-              std::string type( toppers::toupper( info->type ) );
-
-              if ( info->slave )
-              {
-                type = info->api_name;
-              }
+              std::string type( toppers::toupper( info->slave ? info->api_name : info->type ) );
               mproc.set_var( type + ".TEXT_LINE", id, var_t( 1, e ) );
             }
           }
@@ -227,6 +387,12 @@ namespace toppers
             {
               name.resize( name.size() - 1 );
             }
+            // 末尾の ... を除去 & order を付加
+            if ( name.size() > 3 && name.substr( name.size() - 3 ) == "..." )
+            {
+              name.resize( name.size() - 3 );
+              name += boost::lexical_cast< std::string >( api_iter->order );
+            }
 
             element e;
             e.s = api_iter->text; // ソースの字面
@@ -269,6 +435,11 @@ namespace toppers
       // クラスIDリストをマクロプロセッサの変数として設定する。
       void set_clsid_vars( std::vector< std::pair< std::string, long > > const& table, cfg1_out const& cfg1out, macro_processor& mproc )
       {
+        if ( cfg1out.get_def_table() == 0 )
+        {
+          return;
+        }
+
         typedef macro_processor::element element;
         macro_processor::var_t var;
 
@@ -331,6 +502,10 @@ namespace toppers
         typedef macro_processor::var_t var_t;
 
         cfg1_out::cfg1_def_table const* def_table = cfg1out.get_def_table();
+        if ( def_table == 0 )
+        {
+          return;
+        }
         std::size_t sizeof_signed_t;
         std::size_t sizeof_pointer;
 
@@ -427,6 +602,13 @@ namespace toppers
     //! デストラクタ
     factory::~factory()
     {
+    }
+
+    std::auto_ptr< macro_processor > factory::create_macro_processor( cfg1_out const& cfg1out ) const
+    {
+      cfg1_out::static_api_map api_map( cfg1out.merge() );
+      assign_id( api_map );
+      return do_create_macro_processor( cfg1out, api_map );
     }
 
     //! サポートしている静的API情報の取得
@@ -537,8 +719,14 @@ namespace toppers
         init_t()
         {
           boost::any t = global( "cfg1-def-table" );
-          if ( !t.empty() )
+          if ( t.empty() )
           {
+            without_def_table_ = true;
+          }
+          else
+          {
+            without_def_table_ = false;
+
             std::vector< std::string > cfg1_def_table = boost::any_cast< std::vector< std::string >& >( t );
             for ( std::vector< std::string >::const_iterator iter( cfg1_def_table.begin() ), last( cfg1_def_table.end() );
                   iter != last;
@@ -578,9 +766,10 @@ namespace toppers
           }
         }
         cfg1_out::cfg1_def_table cfg1_def_table_;
+        bool without_def_table_;
       };
       static init_t init;
-      cfg1_out::cfg1_def_table const* result = &init.cfg1_def_table_;
+      cfg1_out::cfg1_def_table const* result = init.without_def_table_ ? 0 : &init.cfg1_def_table_;
       return result;
     }
 
@@ -609,7 +798,7 @@ namespace toppers
       e.s = "\n";   mproc->set_var( "NL",  var_t( 1, e ) );  // $NL$
 
       // バージョン情報
-      e.s = toppers::get_global< std::string >( "version" );
+      e.s = toppers::get_global_string( "version" );
       e.i = toppers::get_global< std::tr1::int64_t >( "timestamp" );
       mproc->set_var( "CFG_VERSION", var_t( 1, e ) );   // $CFG_VERSION$
 
@@ -620,7 +809,14 @@ namespace toppers
       set_domid_vars( cfg1out.get_domid_table(), *mproc );
       set_platform_vars( cfg1out, *mproc );
       e.s = cfg1out.get_includes();
+      e.i = boost::none;
       mproc->set_var( "INCLUDES", var_t( 1, e ) );
+
+      // パス情報
+      e.s = boost::lexical_cast< std::string >(toppers::get_global< int >( "pass" ));
+      e.i = toppers::get_global< int >( "pass" );
+      mproc->set_var( "CFG_PASS", var_t( 1, e ) );
+
       return mproc;
     }
 
@@ -642,7 +838,7 @@ namespace toppers
       e.s = "\n";   mproc->set_var( "NL",  var_t( 1, e ) );  // $NL$
 
       // バージョン情報
-      e.s = toppers::get_global< std::string >( "version" );
+      e.s = toppers::get_global_string( "version" );
       e.i = toppers::get_global< std::tr1::int64_t >( "timestamp" );
       mproc->set_var( "CFG_VERSION", var_t( 1, e ) );   // $CFG_VERSION$
 
@@ -652,7 +848,14 @@ namespace toppers
       set_domid_vars( cfg1out.get_domid_table(), *mproc );
       set_platform_vars( cfg1out, *mproc );
       e.s = cfg1out.get_includes();
+      e.i = boost::none;
       mproc->set_var( "INCLUDES", var_t( 1, e ) );
+
+      // パス情報
+      e.s = boost::lexical_cast< std::string >( toppers::get_global< int >( "pass" ) );
+      e.i = toppers::get_global< int >( "pass" );
+      mproc->set_var( "CFG_PASS", var_t( 1, e ) );
+
       return mproc;
     }
 

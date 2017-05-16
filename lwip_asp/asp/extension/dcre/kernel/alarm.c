@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: alarm.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: alarm.c 2625 2014-04-13 06:51:47Z ertl-hiro $
  */
 
 /*
@@ -147,12 +147,14 @@ initialize_alarm(void)
 	ALMCB	*p_almcb;
 	ALMINIB	*p_alminib;
 
-	for (p_almcb = almcb_table, i = 0; i < tnum_salm; p_almcb++, i++) {
+	for (i = 0; i < tnum_salm; i++) {
+		p_almcb = &(almcb_table[i]);
 		p_almcb->p_alminib = &(alminib_table[i]);
 		p_almcb->almsta = false;
 	}
 	queue_initialize(&free_almcb);
-	for (j = 0; i < tnum_alm; p_almcb++, i++, j++) {
+	for (j = 0; i < tnum_alm; i++, j++) {
+		p_almcb = &(almcb_table[i]);
 		p_alminib = &(aalminib_table[j]);
 		p_alminib->almatr = TA_NOEXS;
 		p_almcb->p_alminib = ((const ALMINIB *) p_alminib);
@@ -181,7 +183,7 @@ acre_alm(const T_CALM *pk_calm)
 	CHECK_NONNULL_FUNC(pk_calm->almhdr);
 
 	t_lock_cpu();
-	if (queue_empty(&free_almcb)) {
+	if (tnum_alm == 0 || queue_empty(&free_almcb)) {
 		ercd = E_NOID;
 	}
 	else {
@@ -269,15 +271,17 @@ sta_alm(ID almid, RELTIM almtim)
 	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_almcb->almsta) {
-		tmevtb_dequeue(&(p_almcb->tmevtb));
-	}
 	else {
-		p_almcb->almsta = true;
+		if (p_almcb->almsta) {
+			tmevtb_dequeue(&(p_almcb->tmevtb));
+		}
+		else {
+			p_almcb->almsta = true;
+		}
+		tmevtb_enqueue(&(p_almcb->tmevtb), almtim,
+									(CBACK) call_almhdr, (void *) p_almcb);
+		ercd = E_OK;
 	}
-	tmevtb_enqueue(&(p_almcb->tmevtb), almtim,
-								(CBACK) call_almhdr, (void *) p_almcb);
-	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -308,15 +312,17 @@ ista_alm(ID almid, RELTIM almtim)
 	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_almcb->almsta) {
-		tmevtb_dequeue(&(p_almcb->tmevtb));
-	}
 	else {
-		p_almcb->almsta = true;
+		if (p_almcb->almsta) {
+			tmevtb_dequeue(&(p_almcb->tmevtb));
+		}
+		else {
+			p_almcb->almsta = true;
+		}
+		tmevtb_enqueue(&(p_almcb->tmevtb), almtim,
+									(CBACK) call_almhdr, (void *) p_almcb);
+		ercd = E_OK;
 	}
-	tmevtb_enqueue(&(p_almcb->tmevtb), almtim,
-								(CBACK) call_almhdr, (void *) p_almcb);
-	ercd = E_OK;
 	i_unlock_cpu();
 
   error_exit:
@@ -346,11 +352,13 @@ stp_alm(ID almid)
 	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_almcb->almsta) {
-		p_almcb->almsta = false;
-		tmevtb_dequeue(&(p_almcb->tmevtb));
+	else {
+		if (p_almcb->almsta) {
+			p_almcb->almsta = false;
+			tmevtb_dequeue(&(p_almcb->tmevtb));
+		}
+		ercd = E_OK;
 	}
-	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -380,11 +388,13 @@ istp_alm(ID almid)
 	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_almcb->almsta) {
-		p_almcb->almsta = false;
-		tmevtb_dequeue(&(p_almcb->tmevtb));
+	else {
+		if (p_almcb->almsta) {
+			p_almcb->almsta = false;
+			tmevtb_dequeue(&(p_almcb->tmevtb));
+		}
+		ercd = E_OK;
 	}
-	ercd = E_OK;
 	i_unlock_cpu();
 
   error_exit:

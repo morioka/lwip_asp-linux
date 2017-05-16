@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: check.h 1970 2010-11-20 11:27:06Z ertl-hiro $
+ *  @(#) $Id: check.h 2229 2011-08-14 08:42:37Z ertl-hiro $
  */
 
 /*
@@ -48,26 +48,9 @@
 #define TOPPERS_CHECK_H
 
 /*
- *  予約属性エラーのチェック（E_PAR）
- */
-#define CHECK_RSATR(atr, valid_atr) {						\
-	if (((atr) & ~(valid_atr)) != 0U) {						\
-		ercd = E_RSATR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
  *  優先度の範囲の判定
  */
 #define VALID_TPRI(tpri)	(TMIN_TPRI <= (tpri) && (tpri) <= TMAX_TPRI)
-
-#define VALID_DPRI(dpri)	(TMIN_DPRI <= (dpri) && (dpri) <= TMAX_DPRI)
-
-#define VALID_MPRI(mpri)	(TMIN_MPRI <= (mpri) && (mpri) <= TMAX_MPRI)
-
-#define VALID_ISRPRI(isrpri) \
-				(TMIN_ISRPRI <= (isrpri) && (isrpri) <= TMAX_ISRPRI)
 
 #ifndef VALID_INTPRI_CHGIPM
 #define VALID_INTPRI_CHGIPM(intpri) \
@@ -77,241 +60,66 @@
 /*
  *  タスク優先度のチェック（E_PAR）
  */
-#define CHECK_TPRI(tpri) {									\
+#define CHECK_TPRI(tpri) do {								\
 	if (!VALID_TPRI(tpri)) {								\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_TPRI_INI(tpri) {								\
+#define CHECK_TPRI_INI(tpri) do {							\
 	if (!(VALID_TPRI(tpri) || (tpri) == TPRI_INI)) {		\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_TPRI_SELF(tpri) {								\
+#define CHECK_TPRI_SELF(tpri) do {							\
 	if (!(VALID_TPRI(tpri) || (tpri) == TPRI_SELF)) {		\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
-
-/*
- *  データ優先度のチェック（E_PAR）
- */
-#define CHECK_DPRI(dpri) {									\
-	if (!VALID_DPRI(dpri)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  メッセージ優先度のチェック（E_PAR）
- */
-#define CHECK_MPRI(mpri) {									\
-	if (!VALID_MPRI(mpri)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  割込みサービスルーチン優先度のチェック（E_PAR）
- */
-#define CHECK_ISRPRI(isrpri) {								\
-	if (!VALID_ISRPRI(isrpri)) {							\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
+} while (false)
 
 /*
  *  タイムアウト指定値のチェック（E_PAR）
  */
-#define CHECK_TMOUT(tmout) {								\
+#define CHECK_TMOUT(tmout) do {								\
 	if (!(TMO_FEVR <= (tmout))) {							\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  割込み優先度のチェック（E_PAR）
  */
-#define CHECK_INTPRI_CHGIPM(intpri) {						\
+#define CHECK_INTPRI_CHGIPM(intpri) do {					\
 	if (!VALID_INTPRI_CHGIPM(intpri)) {						\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  割込み番号のチェック（E_PAR）
  */
-#define CHECK_INTNO_CREISR(intno) {							\
-	if (!VALID_INTNO_CREISR(intno)) {						\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-#define CHECK_INTNO_DISINT(intno) {							\
+#define CHECK_INTNO_DISINT(intno) do {						\
 	if (!VALID_INTNO_DISINT(intno)) {						\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
-
-/*
- *  アラインしているかの判定
- */
-#define ALIGNED(val, align)		((((uintptr_t)(val)) & ((align) - 1U)) == 0U)
-
-#ifdef CHECK_FUNC_ALIGN
-#define FUNC_ALIGNED(func)		ALIGNED(func, CHECK_FUNC_ALIGN)
-#else /* CHECK_FUNC_ALIGN */
-#define FUNC_ALIGNED(func)		true
-#endif /* CHECK_FUNC_ALIGN */
-
-#ifdef CHECK_STKSZ_ALIGN
-#define STKSZ_ALIGNED(stksz)	ALIGNED(stksz, CHECK_STKSZ_ALIGN)
-#else /* CHECK_STKSZ_ALIGN */
-#define STKSZ_ALIGNED(stksz)	true
-#endif /* CHECK_STKSZ_ALIGN */
-
-#ifdef CHECK_STACK_ALIGN
-#define STACK_ALIGNED(stack)	ALIGNED(stack, CHECK_STACK_ALIGN)
-#else /* CHECK_STACK_ALIGN */
-#define STACK_ALIGNED(stack)	true
-#endif /* CHECK_STACK_ALIGN */
-
-#ifdef CHECK_MPF_ALIGN
-#define MPF_ALIGNED(mpf)		ALIGNED(mpf, CHECK_MPF_ALIGN)
-#else /* CHECK_MPF_ALIGN */
-#define MPF_ALIGNED(mpf)		true
-#endif /* CHECK_MPF_ALIGN */
-
-#ifdef CHECK_MB_ALIGN
-#define MB_ALIGNED(mb)			ALIGNED(mb, CHECK_MB_ALIGN)
-#else /* CHECK_MB_ALIGN */
-#define MB_ALIGNED(mb)			true
-#endif /* CHECK_MB_ALIGN */
-
-/*
- *  NULLでないことのチェック
- */
-#ifdef CHECK_FUNC_NONNULL
-#define FUNC_NONNULL(func)		((func) != NULL)
-#else /* CHECK_FUNC_NONNULL */
-#define FUNC_NONNULL(func)		true
-#endif /* CHECK_FUNC_NONNULL */
-
-#ifdef CHECK_STACK_NONNULL
-#define STACK_NONNULL(stack)	((stack) != NULL)
-#else /* CHECK_STACK_NONNULL */
-#define STACK_NONNULL(stack)	true
-#endif /* CHECK_STACK_NONNULL */
-
-#ifdef CHECK_MPF_NONNULL
-#define MPF_NONNULL(mpf)		((mpf) != NULL)
-#else /* CHECK_MPF_NONNULL */
-#define MPF_NONNULL(mpf)		true
-#endif /* CHECK_MPF_NONNULL */
-
-/*
- *  関数の先頭番地のチェック（E_PAR）
- */
-#define CHECK_ALIGN_FUNC(func) {							\
-	if (!FUNC_ALIGNED(func)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-#define CHECK_NONNULL_FUNC(func) {							\
-	if (!FUNC_NONNULL(func)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  スタックサイズのチェック（E_PAR）
- */
-#define CHECK_ALIGN_STKSZ(stksz) {							\
-	if (!STKSZ_ALIGNED(stksz)) {							\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-#ifndef TARGET_MIN_STKSZ
-#define TARGET_MIN_STKSZ	1U		/* 未定義の場合は0でないことをチェック */
-#endif /* TARGET_MIN_STKSZ */
-
-#define CHECK_STKSZ_MIN(stksz) {							\
-	if ((stksz) < TARGET_MIN_STKSZ) {						\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  スタックの先頭番地のチェック（E_PAR）
- */
-#define CHECK_ALIGN_STACK(stack) {							\
-	if (!STACK_ALIGNED(stack)) {							\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-#define CHECK_NONNULL_STACK(stack) {						\
-	if (!STACK_NONNULL(stack)) {							\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  固定長メモリプール領域の先頭番地のチェック（E_PAR）
- */
-#define CHECK_ALIGN_MPF(mpf) {								\
-	if (!MPF_ALIGNED(mpf)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-#define CHECK_NONNULL_MPF(mpf) {							\
-	if (!MPF_NONNULL(mpf)) {								\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
-
-/*
- *  管理領域の先頭番地のチェック（E_PAR）
- */
-#define CHECK_ALIGN_MB(mb) {								\
-	if (!MB_ALIGNED(mb)) {									\
-		ercd = E_PAR;										\
-		goto error_exit;									\
-	}														\
-}
+} while (false)
 
 /*
  *  その他のパラメータエラーのチェック（E_PAR）
  */
-#define CHECK_PAR(exp) {									\
+#define CHECK_PAR(exp) do {									\
 	if (!(exp)) {											\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  オブジェクトIDの範囲の判定
@@ -325,170 +133,152 @@
 #define VALID_MPFID(mpfid)	(TMIN_MPFID <= (mpfid) && (mpfid) <= tmax_mpfid)
 #define VALID_CYCID(cycid)	(TMIN_CYCID <= (cycid) && (cycid) <= tmax_cycid)
 #define VALID_ALMID(almid)	(TMIN_ALMID <= (almid) && (almid) <= tmax_almid)
-#define VALID_ISRID(isrid)	(TMIN_ISRID <= (isrid) && (isrid) <= tmax_isrid)
 
 /*
  *  オブジェクトIDのチェック（E_ID）
  */
-#define CHECK_TSKID(tskid) {								\
+#define CHECK_TSKID(tskid) do {								\
 	if (!VALID_TSKID(tskid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_TSKID_SELF(tskid) {							\
+#define CHECK_TSKID_SELF(tskid) do {						\
 	if (!(VALID_TSKID(tskid) || (tskid) == TSK_SELF)) {		\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_SEMID(semid) {								\
+#define CHECK_SEMID(semid) do {								\
 	if (!VALID_SEMID(semid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_FLGID(flgid) {								\
+#define CHECK_FLGID(flgid) do {								\
 	if (!VALID_FLGID(flgid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_DTQID(dtqid) {								\
+#define CHECK_DTQID(dtqid) do {								\
 	if (!VALID_DTQID(dtqid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_PDQID(pdqid) {								\
+#define CHECK_PDQID(pdqid) do {								\
 	if (!VALID_PDQID(pdqid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_MBXID(mbxid) {								\
+#define CHECK_MBXID(mbxid) do {								\
 	if (!VALID_MBXID(mbxid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_MPFID(mpfid) {								\
+#define CHECK_MPFID(mpfid) do {								\
 	if (!VALID_MPFID(mpfid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_CYCID(cycid) {								\
+#define CHECK_CYCID(cycid) do {								\
 	if (!VALID_CYCID(cycid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_ALMID(almid) {								\
+#define CHECK_ALMID(almid) do {								\
 	if (!VALID_ALMID(almid)) {								\
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-}
-
-#define CHECK_ISRID(isrid) {								\
-	if (!VALID_ISRID(isrid)) {								\
-		ercd = E_ID;										\
-		goto error_exit;									\
-	}														\
-}
+} while (false)
 
 /*
  *  呼出しコンテキストのチェック（E_CTX）
  */
-#define CHECK_TSKCTX() {									\
+#define CHECK_TSKCTX() do {									\
 	if (sense_context()) {									\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_INTCTX() {									\
+#define CHECK_INTCTX() do {									\
 	if (!sense_context()) {									\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  呼出しコンテキストとCPUロック状態のチェック（E_CTX）
  */
-#define CHECK_TSKCTX_UNL() {								\
+#define CHECK_TSKCTX_UNL() do {								\
 	if (sense_context() || t_sense_lock()) {				\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
-#define CHECK_INTCTX_UNL() {								\
+#define CHECK_INTCTX_UNL() do {								\
 	if (!sense_context() || i_sense_lock()) {				\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  ディスパッチ保留状態でないかのチェック（E_CTX）
  */
-#define CHECK_DISPATCH() {									\
+#define CHECK_DISPATCH() do {								\
 	if (sense_context() || t_sense_lock() || !dspflg) {		\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  その他のコンテキストエラーのチェック（E_CTX）
  */
-#define CHECK_CTX(exp) {									\
+#define CHECK_CTX(exp) do {									\
 	if (!(exp)) {											\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  自タスクを指定していないかのチェック（E_ILUSE）
  */
-#define CHECK_NONSELF(p_tcb) {								\
+#define CHECK_NONSELF(p_tcb) do {							\
 	if ((p_tcb) == p_runtsk) {								\
 		ercd = E_ILUSE;										\
 		goto error_exit;									\
 	}														\
-}
+} while (false)
 
 /*
  *  その他の不正使用エラーのチェック（E_ILUSE）
  */
-#define CHECK_ILUSE(exp) {									\
+#define CHECK_ILUSE(exp) do {								\
 	if (!(exp)) {											\
 		ercd = E_ILUSE;										\
 		goto error_exit;									\
 	}														\
-}
-
-/*
- *  未サポート機能エラーのチェック（E_NOSPT）
- */
-#define CHECK_NOSPT(exp) {									\
-	if (!(exp)) {											\
-		ercd = E_NOSPT;										\
-		goto error_exit;									\
-	}														\
-}
+} while (false)
 
 #endif /* TOPPERS_CHECK_H */

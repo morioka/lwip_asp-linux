@@ -1,8 +1,8 @@
 
 		TOPPERS/ASPカーネルの仕様概要
 
-		対応バージョン: Release 1.7
-		最終更新: 2011年3月31日
+		対応バージョン: Release 1.9
+		最終更新: 2013年12月31日
 
 このドキュメントは，TOPPERS/ASPカーネルの仕様概要について説明したもので
 ある．μITRON4.0仕様のスタンダードプロファイルに対する拡張および変更箇
@@ -13,7 +13,7 @@
      Toyohashi Open Platform for Embedded Real-Time Systems/
      Advanced Standard Profile Kernel
 
- Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2005-2013 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: asp_spec.txt 2050 2011-04-03 02:37:44Z ertl-hiro $
+ $Id: asp_spec.txt 2585 2013-12-31 06:17:36Z ertl-hiro $
 ----------------------------------------------------------------------
 
 ○前提となる文書
@@ -416,7 +416,7 @@ ASPカーネルでは，いくつかの拡張機能を実装するために，�
 システム（TECS）を導入する．また，カーネルオブジェクトをTECSのコンポー
 ネントとして扱えるようにする．
 
-なお，Release 1.7の時点では，TECSに対応するための修正は，TECSの配布パッ
-ケージに含まれており，ASPカーネルの配布パッケージには含まれていない．
+なお，TECSに対応するための修正は，TECSの配布パッケージに含まれており，
+ASPカーネルの配布パッケージには含まれていない．
 
 以上

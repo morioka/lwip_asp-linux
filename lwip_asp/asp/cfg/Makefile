@@ -19,9 +19,15 @@ endif
 # ハングアップする場合には、-O0に変更してみてください。
 OPTIMIZE = -O2
 
-SUBDIRS  = toppers \
-	toppers/itronx \
-	cfg
+MODULES = toppers/itronx \
+	toppers/oil
+
+ifdef HAS_CFG_XML
+	MODULES := $(MODULES) toppers/xml
+	OPTIONS := $(OPTIONS) -DHAS_CFG_XML=1
+endif
+
+SUBDIRS  = toppers $(MODULES) cfg
 
 all: $(SUBDIRS)
 

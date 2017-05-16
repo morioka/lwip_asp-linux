@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_tex2.c 1577 2009-05-31 14:30:51Z ertl-hiro $
+ *  $Id: test_tex2.c 2596 2014-01-02 12:21:31Z ertl-hiro $
  */
 
 /* 
@@ -77,82 +77,95 @@
  *	ALM1:  アラームハンドラ1
  *	ALM2:  アラームハンドラ2
  *	ALM3:  アラームハンドラ3
- *	CPUEXC1: CPU例外ハンドラ
+ *	CPUEXC: CPU例外ハンドラ
  *
  * 【テストシーケンス】
  *
  *	== TASK1（優先度：10）==
- *	1:	初期状態のチェック
+ *	1:	state(false, false, TIPM_ENAALL, false, false, true)
  *		ref_tex(TSK_SELF, &rtex)
+ *		assert((rtex.texstat & TTEX_DIS) != 0U)
+ *		assert(rtex.pndptn == 0U)
  *	2:	sta_alm(ALM1, 1U)
- *		アラームハンドラ1の実行を待つ
+ *		DO(while (!(alm1_flag)))	... アラームハンドラ1の実行を待つ
  *	== ALM1 ==
- *	3:	初期状態のチェック
- *		iras_tex(TASK3, 0x0001)		... (A-2)
- *		iras_tex(TASK4, 0x0001)		... (A-1)
- *		iras_tex(TASK2, 0x0001)		... (B-2)
- *		iras_tex(TASK1, 0x0001)		... (B-3)
- *		リターン
+ *	3:	state_i(true, false, false, true, true)
+ *		iras_tex(TASK3, 0x0001) -> E_OBJ		... (A-2)
+ *		iras_tex(TASK4, 0x0001) -> E_OBJ		... (A-1)
+ *		iras_tex(TASK2, 0x0001)					... (B-2)
+ *		iras_tex(TASK1, 0x0001)					... (B-3)
+ *		DO(alm1_flag = true)
+ *		RETURN
  *	== TASK1（続き）==
  *	4:	ena_tex()
- *	== TASK1タスク例外処理ルーチン（1回目）==
- *	5:	初期状態のチェック
+ *	== TASK1-TEX-1（1回目）==
+ *	5:	assert(texptn == 0x0001)
+ *		state(false, false, TIPM_ENAALL, false, false, true)
  *	6:	dis_dsp() ... 4つの状態をそれぞれ変化させる
  *		chg_ipm(TMAX_INTPRI)
  *		ena_tex()
  *		loc_cpu()
- *		リターン
+ *		state(false, true, TMAX_INTPRI, true, true, false)
+ *		RETURN
  *	== TASK1（続き）==
- *	7:	戻ってきた状態のチェック
+ *	7:	state(false, false, TIPM_ENAALL, false, false, false)
  *		ref_tex(TSK_SELF, &rtex)
+ *		assert((rtex.texstat & TTEX_ENA) != 0U)
+ *		assert(rtex.pndptn == 0U)
  *	8:	sta_alm(ALM2, 1U)
- *		アラームハンドラ2の実行を待つ
+ *		DO(while (!(alm2_flag)))
  *	== ALM2 ==
- *	9:	初期状態のチェック
- *		iras_tex(TASK1, 0x0002)		... (B-1)
- *		リターン					... (D-1)
- *	== TASK1タスク例外処理ルーチン（2回目）==
- *	10:	初期状態のチェック
- *		リターン
+ *	9:	state_i(true, false, false, true, false)
+ *		iras_tex(TASK1, 0x0002)					... (B-1)
+ *		DO(alm2_flag = true)
+ *		RETURN									... (D-1)
+ *	== TASK1-TEX-2（2回目）==
+ *	10:	assert(texptn == 0x0002)
+ *		state(false, false, TIPM_ENAALL, false, false, true)
+ *		RETURN
  *	== TASK1（続き）==
  *	11:	sus_tsk(TASK2)
  *		sus_tsk(TASK3)
  *	12:	sta_alm(ALM3, 10U)
  *	13:	dly_tsk(50U)
  *	== ALM3 ==
- *	14:	初期状態のチェック
- *		［sns_tex()を含む］			... (F)
+ *	14:	state_i(true, false, false, true, true)	... (F)［sns_tex()を含む］
  *		iget_tid(&tskid)
- *		iras_tex(TASK1, 0x0004)		... (B-2)
- *		リターン
- *	== TASK1タスク例外処理ルーチン（3回目）==
- *	15:	初期状態のチェック
- *		リターン
+ *		assert(tskid == TSK_NONE)
+ *		iras_tex(TASK1, 0x0004)
+ *		DO(alm3_flag = true)
+ *		RETURN
+ *	== TASK1-TEX-3（3回目）==
+ *	15:	assert(texptn == 0x0004)
+ *		state(false, false, TIPM_ENAALL, false, false, true)
+ *		RETURN
  *	== TASK1（続き）==
  *	16:	rsm_tsk(TASK2)
  *		rsm_tsk(TASK3)
  *		dis_dsp()
- *	17:	RAISE_CPU_EXCEPTION
- *	== CPUEXC1 ==
- *	18:	初期状態のチェック
- *		xsns_xpn(p_excinf)
- *		iras_tex(TASK3, 0x0010)		... (A-2)
- *		iras_tex(TASK4, 0x0010)		... (A-1)
- *		iras_tex(TASK2, 0x0010)		... (C-2)
- *		iras_tex(TASK1, 0x0010)		... (C-1)
- *		リターン					... (E-1)
- *	== TASK1タスク例外処理ルーチン（4回目）==
- *	19:	初期状態のチェック
+ *	17:	DO(RAISE_CPU_EXCEPTION)
+ *	== CPUEXC ==
+ *	18:	state_i(true, false, true, true, false)
+ *		assert(xsns_xpn(p_excinf) == false)
+ *		iras_tex(TASK3, 0x0010) -> E_OBJ		... (A-2)
+ *		iras_tex(TASK4, 0x0010) -> E_OBJ		... (A-1)
+ *		iras_tex(TASK2, 0x0010)					... (C-2)
+ *		iras_tex(TASK1, 0x0010)					... (C-1)
+ *		RETURN									... (E-1)
+ *	== TASK1-TEX-4（4回目）==
+ *	19:	assert(texptn == 0x0010)
+ *		state(false, false, TIPM_ENAALL, true, true, true)
  *	20:	ext_tsk()
  *	== TASK2（優先度：10）==
- *	21:	初期状態のチェック
+ *	21:	state(false, false, TIPM_ENAALL, false, false, true)
  *	22:	ena_tex()
- *	== TASK2タスク例外処理ルーチン ==
- *	23:	初期状態のチェック
- *		リターン
+ *	== TASK2-TEX ==
+ *	23:	assert(texptn == 0x0011)
+ *		state(false, false, TIPM_ENAALL, false, false, true)
+ *		RETURN
  *	== TASK2（続き）==
  *	24:	sus_tsk(TASK3)
- *	25:	テスト終了
+ *	25:	END
  */
 
 #include <kernel.h>
@@ -165,213 +178,9 @@ volatile bool_t	alm1_flag = false;
 volatile bool_t	alm2_flag = false;
 volatile bool_t	alm3_flag = false;
 
-void
-tex_task1(TEXPTN texptn, intptr_t exinf)
-{
-	ER		ercd;
-
-	switch (texptn) {
-	case 0x0001:
-		check_point(5);
-		check_state(false, false, TIPM_ENAALL, false, false, true);
-
-		/*
-		 *  ディスパッチ禁止，割込み優先度マスク変更，タスク例外処理許可，
-		 *  CPUロック
-		 */
-		check_point(6);
-		ercd = dis_dsp();
-		check_ercd(ercd, E_OK);
-		ercd = chg_ipm(TMAX_INTPRI);
-		check_ercd(ercd, E_OK);
-		ercd = ena_tex();
-		check_ercd(ercd, E_OK);
-		ercd = loc_cpu();
-		check_ercd(ercd, E_OK);
-		check_state(false, true, TMAX_INTPRI, true, true, false);
-		break;
-
-	case 0x0002:
-		check_point(10);
-		check_state(false, false, TIPM_ENAALL, false, false, true);
-		break;
-
-	case 0x0004:
-		check_point(15);
-		check_state(false, false, TIPM_ENAALL, false, false, true);
-		break;
-
-	case 0x0010:
-		check_point(19);
-		check_state(false, false, TIPM_ENAALL, true, true, true);
-
-		/*
-		 *  タスク終了
-		 */
-		check_point(20);
-		ercd = ext_tsk();
-		check_point(0);
-		break;
-
-	default:
-		check_point(0);
-		break;
-	}
-}
-
-void
-task1(intptr_t exinf)
-{
-	ER		ercd;
-	T_RTEX	rtex;
-
-	/*
-	 *  初期状態のチェック
-	 */
-	check_point(1);
-	check_state(false, false, TIPM_ENAALL, false, false, true);
-	ercd = ref_tex(TSK_SELF, &rtex);
-	check_ercd(ercd, E_OK);
-	check_assert((rtex.texstat & TTEX_DIS) != 0);
-	check_assert(rtex.pndptn == 0);
-
-	/*
-	 *  アラームハンドラ1の動作開始
-	 */
-	check_point(2);
-	ercd = sta_alm(ALM1, 1U);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  アラームハンドラ1の実行を待つ
-	 */
-	while (!(alm1_flag));
-
-	/*
-	 *  タスク例外処理を許可
-	 */
-	check_point(4);
-	ercd = ena_tex();
-	/* ここでタスク例外処理ルーチンが動作する */
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  タスク例外処理からのリターンにより元の状態に戻っていることを
-	 *  チェック
-	 */
-	check_point(7);
-	check_state(false, false, TIPM_ENAALL, false, false, false);
-	ercd = ref_tex(TSK_SELF, &rtex);
-	check_ercd(ercd, E_OK);
-	check_assert((rtex.texstat & TTEX_ENA) != 0);
-	check_assert(rtex.pndptn == 0);
-
-	/*
-	 *  アラームハンドラ2の動作開始
-	 */
-	check_point(8);
-	ercd = sta_alm(ALM2, 1U);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  アラームハンドラ2の実行を待つ
-	 */
-	while (!(alm2_flag));
-
-	/*
-	 *  TASK2とTASK3を止める．
-	 */
-	check_point(11);
-	ercd = sus_tsk(TASK2);
-	check_ercd(ercd, E_OK);
-	ercd = sus_tsk(TASK3);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  アラームハンドラ3の動作開始
-	 */
-	check_point(12);
-	ercd = sta_alm(ALM3, 10U);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  実行遅延
-	 */
-	check_point(13);
-	ercd = dly_tsk(50U);
-	/* アラームハンドラ3が動作する */
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  TASK2とTASK3を再開する．
-	 */
-	check_point(16);
-	ercd = rsm_tsk(TASK2);
-	check_ercd(ercd, E_OK);
-	ercd = rsm_tsk(TASK3);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  ディスパッチ禁止
-	 */
-	ercd = dis_dsp();
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  CPU例外を発生させる
-	 */
-	check_point(17);
-	RAISE_CPU_EXCEPTION;
-
-	check_point(0);
-}
-
-void
-tex_task2(TEXPTN texptn, intptr_t exinf)
-{
-	switch (texptn) {
-	case 0x0011:
-		check_point(23);
-		check_state(false, false, TIPM_ENAALL, false, false, true);
-		break;
-
-	default:
-		check_point(0);
-		break;
-	}
-}
-
-void
-task2(intptr_t exinf)
-{
-	ER		ercd;
-
-	/*
-	 *  初期状態のチェック
-	 */
-	check_point(21);
-	check_state(false, false, TIPM_ENAALL, false, false, true);
-
-	/*
-	 *  タスク例外処理を許可
-	 */
-	check_point(22);
-	ercd = ena_tex();
-	/* ここでタスク例外処理ルーチンが動作する */
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  TASK3を止める．
-	 */
-	check_point(24);
-	ercd = sus_tsk(TASK3);
-	check_ercd(ercd, E_OK);
-
-	/*
-	 *  テスト終了
-	 */
-	check_finish(25);
-}
+/*
+ *  task3，task4とtex_task4は生成されない
+ */
 
 void
 task3(intptr_t exinf)
@@ -391,102 +200,280 @@ tex_task4(TEXPTN texptn, intptr_t exinf)
 	check_point(0);
 }
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 alarm1_handler(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
-	/*
-	 *  初期状態のチェック
-	 */
 	check_point(3);
 	check_state_i(true, false, false, true, true);
 
-	/*
-	 *  iras_texのエラー検出
-	 */
 	ercd = iras_tex(TASK3, 0x0001);
 	check_ercd(ercd, E_OBJ);
+
 	ercd = iras_tex(TASK4, 0x0001);
 	check_ercd(ercd, E_OBJ);
 
-	/*
-	 *  タスク例外処理を要求
-	 */
 	ercd = iras_tex(TASK2, 0x0001);
 	check_ercd(ercd, E_OK);
+
 	ercd = iras_tex(TASK1, 0x0001);
 	check_ercd(ercd, E_OK);
 
 	alm1_flag = true;
+
+	return;
+
+	check_point(0);
 }
 
 void
 alarm2_handler(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
-	/*
-	 *  初期状態のチェック
-	 */
 	check_point(9);
 	check_state_i(true, false, false, true, false);
 
-	/*
-	 *  タスク例外処理を要求
-	 */
 	ercd = iras_tex(TASK1, 0x0002);
 	check_ercd(ercd, E_OK);
 
 	alm2_flag = true;
+
+	return;
+
+	check_point(0);
 }
 
 void
 alarm3_handler(intptr_t exinf)
 {
-	ER		ercd;
 	ID		tskid;
+	ER_UINT	ercd;
 
 	check_point(14);
 	check_state_i(true, false, false, true, true);
+
 	ercd = iget_tid(&tskid);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskid == TSK_NONE);
 
-	/*
-	 *  タスク例外処理を要求
-	 */
 	ercd = iras_tex(TASK1, 0x0004);
 	check_ercd(ercd, E_OK);
 
 	alm3_flag = true;
+
+	return;
+
+	check_point(0);
 }
 
 void
 cpuexc_handler(void *p_excinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
-	/*
-	 *  初期状態のチェック
-	 */
 	check_point(18);
 	check_state_i(true, false, true, true, false);
+
 	check_assert(xsns_xpn(p_excinf) == false);
 
-	/*
-	 *  iras_texのエラー検出
-	 */
 	ercd = iras_tex(TASK3, 0x0010);
 	check_ercd(ercd, E_OBJ);
+
 	ercd = iras_tex(TASK4, 0x0010);
 	check_ercd(ercd, E_OBJ);
 
-	/*
-	 *  タスク例外処理を要求
-	 */
 	ercd = iras_tex(TASK2, 0x0010);
 	check_ercd(ercd, E_OK);
+
 	ercd = iras_tex(TASK1, 0x0010);
 	check_ercd(ercd, E_OK);
+
+	return;
+
+	check_point(0);
+}
+
+void
+task1(intptr_t exinf)
+{
+	ER_UINT	ercd;
+	T_RTEX	rtex;
+
+	test_start(__FILE__);
+
+	check_point(1);
+	check_state(false, false, TIPM_ENAALL, false, false, true);
+
+	ercd = ref_tex(TSK_SELF, &rtex);
+	check_ercd(ercd, E_OK);
+
+	check_assert((rtex.texstat & TTEX_DIS) != 0U);
+
+	check_assert(rtex.pndptn == 0U);
+
+	check_point(2);
+	ercd = sta_alm(ALM1, 1U);
+	check_ercd(ercd, E_OK);
+
+	while (!(alm1_flag));
+
+	check_point(4);
+	ercd = ena_tex();
+	check_ercd(ercd, E_OK);
+
+	check_point(7);
+	check_state(false, false, TIPM_ENAALL, false, false, false);
+
+	ercd = ref_tex(TSK_SELF, &rtex);
+	check_ercd(ercd, E_OK);
+
+	check_assert((rtex.texstat & TTEX_ENA) != 0U);
+
+	check_assert(rtex.pndptn == 0U);
+
+	check_point(8);
+	ercd = sta_alm(ALM2, 1U);
+	check_ercd(ercd, E_OK);
+
+	while (!(alm2_flag));
+
+	check_point(11);
+	ercd = sus_tsk(TASK2);
+	check_ercd(ercd, E_OK);
+
+	ercd = sus_tsk(TASK3);
+	check_ercd(ercd, E_OK);
+
+	check_point(12);
+	ercd = sta_alm(ALM3, 10U);
+	check_ercd(ercd, E_OK);
+
+	check_point(13);
+	ercd = dly_tsk(50U);
+	check_ercd(ercd, E_OK);
+
+	check_point(16);
+	ercd = rsm_tsk(TASK2);
+	check_ercd(ercd, E_OK);
+
+	ercd = rsm_tsk(TASK3);
+	check_ercd(ercd, E_OK);
+
+	ercd = dis_dsp();
+	check_ercd(ercd, E_OK);
+
+	check_point(17);
+	RAISE_CPU_EXCEPTION;
+
+	check_point(0);
+}
+
+static uint_t	tex_task1_count = 0;
+
+void
+tex_task1(TEXPTN texptn, intptr_t exinf)
+{
+	ER_UINT	ercd;
+
+	switch (++tex_task1_count) {
+	case 1:
+		check_point(5);
+		check_assert(texptn == 0x0001);
+
+		check_state(false, false, TIPM_ENAALL, false, false, true);
+
+		check_point(6);
+		ercd = dis_dsp();
+		check_ercd(ercd, E_OK);
+
+		ercd = chg_ipm(TMAX_INTPRI);
+		check_ercd(ercd, E_OK);
+
+		ercd = ena_tex();
+		check_ercd(ercd, E_OK);
+
+		ercd = loc_cpu();
+		check_ercd(ercd, E_OK);
+
+		check_state(false, true, TMAX_INTPRI, true, true, false);
+
+		return;
+
+		check_point(0);
+
+	case 2:
+		check_point(10);
+		check_assert(texptn == 0x0002);
+
+		check_state(false, false, TIPM_ENAALL, false, false, true);
+
+		return;
+
+		check_point(0);
+
+	case 3:
+		check_point(15);
+		check_assert(texptn == 0x0004);
+
+		check_state(false, false, TIPM_ENAALL, false, false, true);
+
+		return;
+
+		check_point(0);
+
+	case 4:
+		check_point(19);
+		check_assert(texptn == 0x0010);
+
+		check_state(false, false, TIPM_ENAALL, true, true, true);
+
+		check_point(20);
+		ercd = ext_tsk();
+		check_ercd(ercd, E_OK);
+
+		check_point(0);
+
+	default:
+		check_point(0);
+	}
+	check_point(0);
+}
+
+void
+task2(intptr_t exinf)
+{
+	ER_UINT	ercd;
+
+	check_point(21);
+	check_state(false, false, TIPM_ENAALL, false, false, true);
+
+	check_point(22);
+	ercd = ena_tex();
+	check_ercd(ercd, E_OK);
+
+	check_point(24);
+	ercd = sus_tsk(TASK3);
+	check_ercd(ercd, E_OK);
+
+	check_finish(25);
+	check_point(0);
+}
+
+void
+tex_task2(TEXPTN texptn, intptr_t exinf)
+{
+
+	check_point(23);
+	check_assert(texptn == 0x0011);
+
+	check_state(false, false, TIPM_ENAALL, false, false, true);
+
+	return;
+
+	check_point(0);
 }

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: alarm.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: alarm.c 2133 2011-06-26 03:14:51Z ertl-hiro $
  */
 
 /*
@@ -58,22 +58,6 @@
 #ifndef LOG_ALM_LEAVE
 #define LOG_ALM_LEAVE(p_almcb)
 #endif /* LOG_ALM_LEAVE */
-
-#ifndef LOG_ACRE_ALM_ENTER
-#define LOG_ACRE_ALM_ENTER(pk_calm)
-#endif /* LOG_ACRE_ALM_ENTER */
-
-#ifndef LOG_ACRE_ALM_LEAVE
-#define LOG_ACRE_ALM_LEAVE(ercd)
-#endif /* LOG_ACRE_ALM_LEAVE */
-
-#ifndef LOG_DEL_ALM_ENTER
-#define LOG_DEL_ALM_ENTER(almid)
-#endif /* LOG_DEL_ALM_ENTER */
-
-#ifndef LOG_DEL_ALM_LEAVE
-#define LOG_DEL_ALM_LEAVE(ercd)
-#endif /* LOG_DEL_ALM_LEAVE */
 
 #ifndef LOG_STA_ALM_ENTER
 #define LOG_STA_ALM_ENTER(almid, almtim)
@@ -119,7 +103,6 @@
  *  アラームハンドラの数
  */
 #define tnum_alm	((uint_t)(tmax_almid - TMIN_ALMID + 1))
-#define tnum_salm	((uint_t)(tmax_salmid - TMIN_ALMID + 1))
 
 /*
  *  アラームハンドラIDからアラームハンドラ管理ブロックを取り出すためのマクロ
@@ -127,126 +110,25 @@
 #define INDEX_ALM(almid)	((uint_t)((almid) - TMIN_ALMID))
 #define get_almcb(almid)	(&(almcb_table[INDEX_ALM(almid)]))
 
-#ifdef TOPPERS_almini
-
-/*
- *  使用していないアラームハンドラ管理ブロックのリスト
- *
- *  アラームハンドラ管理ブロックの先頭にはキューにつなぐための領域がな
- *  いため，タイムイベントブロック（tmevtb）の領域を用いる．
- */
-QUEUE	free_almcb;
-
 /*
  *  アラームハンドラ機能の初期化
  */
+#ifdef TOPPERS_almini
+
 void
 initialize_alarm(void)
 {
-	uint_t	i, j;
+	uint_t	i;
 	ALMCB	*p_almcb;
-	ALMINIB	*p_alminib;
 
-	for (p_almcb = almcb_table, i = 0; i < tnum_salm; p_almcb++, i++) {
+	for (i = 0; i < tnum_alm; i++) {
+		p_almcb = &(almcb_table[i]);
 		p_almcb->p_alminib = &(alminib_table[i]);
 		p_almcb->almsta = false;
-	}
-	queue_initialize(&free_almcb);
-	for (j = 0; i < tnum_alm; p_almcb++, i++, j++) {
-		p_alminib = &(aalminib_table[j]);
-		p_alminib->almatr = TA_NOEXS;
-		p_almcb->p_alminib = ((const ALMINIB *) p_alminib);
-		queue_insert_prev(&free_almcb, ((QUEUE *) &(p_almcb->tmevtb)));
 	}
 }
 
 #endif /* TOPPERS_almini */
-
-/*
- *  アラームハンドラの生成
- */
-#ifdef TOPPERS_acre_alm
-
-ER_UINT
-acre_alm(const T_CALM *pk_calm)
-{
-	ALMCB	*p_almcb;
-	ALMINIB	*p_alminib;
-	ER		ercd;
-
-	LOG_ACRE_ALM_ENTER(pk_calm);
-	CHECK_TSKCTX_UNL();
-	CHECK_RSATR(pk_calm->almatr, TA_NULL);
-	CHECK_ALIGN_FUNC(pk_calm->almhdr);
-	CHECK_NONNULL_FUNC(pk_calm->almhdr);
-
-	t_lock_cpu();
-	if (queue_empty(&free_almcb)) {
-		ercd = E_NOID;
-	}
-	else {
-		p_almcb = ((ALMCB *)(((char *) queue_delete_next(&free_almcb))
-												- offsetof(ALMCB, tmevtb)));
-		p_alminib = (ALMINIB *)(p_almcb->p_alminib);
-		p_alminib->almatr = pk_calm->almatr;
-		p_alminib->exinf = pk_calm->exinf;
-		p_alminib->almhdr = pk_calm->almhdr;
-
-		p_almcb->almsta = false;
-		ercd = ALMID(p_almcb);
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_ACRE_ALM_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_acre_alm */
-
-/*
- *  アラームハンドラの削除
- */
-#ifdef TOPPERS_del_alm
-
-ER
-del_alm(ID almid)
-{
-	ALMCB	*p_almcb;
-	ALMINIB	*p_alminib;
-	ER		ercd;
-
-	LOG_DEL_ALM_ENTER(almid);
-	CHECK_TSKCTX_UNL();
-	CHECK_ALMID(almid);
-	p_almcb = get_almcb(almid);
-
-	t_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (ALMID(p_almcb) > tmax_salmid) {
-		if (p_almcb->almsta) {
-			p_almcb->almsta = false;
-			tmevtb_dequeue(&(p_almcb->tmevtb));
-		}
-
-		p_alminib = (ALMINIB *)(p_almcb->p_alminib);
-		p_alminib->almatr = TA_NOEXS;
-		queue_insert_prev(&free_almcb, ((QUEUE *) &(p_almcb->tmevtb)));
-		ercd = E_OK;
-	}
-	else {
-		ercd = E_OBJ;
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_DEL_ALM_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_del_alm */
 
 /*
  *  アラームハンドラの動作開始
@@ -266,10 +148,7 @@ sta_alm(ID almid, RELTIM almtim)
 	p_almcb = get_almcb(almid);
 
 	t_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_almcb->almsta) {
+	if (p_almcb->almsta) {
 		tmevtb_dequeue(&(p_almcb->tmevtb));
 	}
 	else {
@@ -305,10 +184,7 @@ ista_alm(ID almid, RELTIM almtim)
 	p_almcb = get_almcb(almid);
 
 	i_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_almcb->almsta) {
+	if (p_almcb->almsta) {
 		tmevtb_dequeue(&(p_almcb->tmevtb));
 	}
 	else {
@@ -343,10 +219,7 @@ stp_alm(ID almid)
 	p_almcb = get_almcb(almid);
 
 	t_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_almcb->almsta) {
+	if (p_almcb->almsta) {
 		p_almcb->almsta = false;
 		tmevtb_dequeue(&(p_almcb->tmevtb));
 	}
@@ -377,10 +250,7 @@ istp_alm(ID almid)
 	p_almcb = get_almcb(almid);
 
 	i_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (p_almcb->almsta) {
+	if (p_almcb->almsta) {
 		p_almcb->almsta = false;
 		tmevtb_dequeue(&(p_almcb->tmevtb));
 	}
@@ -411,19 +281,14 @@ ref_alm(ID almid, T_RALM *pk_ralm)
 	p_almcb = get_almcb(almid);
 
 	t_lock_cpu();
-	if (p_almcb->p_alminib->almatr == TA_NOEXS) {
-		ercd = E_NOEXS;
+	if (p_almcb->almsta) {
+		pk_ralm->almstat = TALM_STA;
+		pk_ralm->lefttim = tmevt_lefttim(&(p_almcb->tmevtb));
 	}
 	else {
-		if (p_almcb->almsta) {
-			pk_ralm->almstat = TALM_STA;
-			pk_ralm->lefttim = tmevt_lefttim(&(p_almcb->tmevtb));
-		}
-		else {
-			pk_ralm->almstat = TALM_STP;
-		}
-		ercd = E_OK;
+		pk_ralm->almstat = TALM_STP;
 	}
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:

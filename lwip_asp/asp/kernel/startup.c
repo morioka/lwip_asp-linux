@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2009 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: startup.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: startup.c 2067 2011-05-05 00:46:29Z ertl-hiro $
  */
 
 /*
@@ -94,7 +94,6 @@ sta_ker(void)
 	 *  タイムイベント管理モジュールは他のモジュールより先に初期化
 	 *  する必要がある．
 	 */
-	initialize_kmm();
 	initialize_tmevt();
 	initialize_object();
 
@@ -143,6 +142,12 @@ ext_ker(void)
 	 *  非タスクコンテキストに切り換えて，exit_kernelを呼び出す．
 	 */
 	call_exit_kernel();
+
+	/*
+	 *  コンパイラの警告対策（ここへ来ることはないはず）
+	 */
+	SIL_UNL_INT();
+	LOG_EXT_KER_LEAVE(E_SYS);
 	return(E_SYS);
 }
 
@@ -165,40 +170,3 @@ exit_kernel(void)
 }
 
 #endif /* TOPPERS_ext_ker */
-
-/*
- *  カーネルの割り付けるメモリ領域の管理
- *
- *  メモリ領域を先頭から順に割り当て，解放されたメモリ領域を再利用しな
- *  いメモリ管理モジュール．
- */
-#ifdef TOPPERS_kermem
-#ifndef OMIT_KMM_ALLOCONLY
-
-static void	*kmm_brk;
-
-void
-initialize_kmm(void)
-{
-	kmm_brk = ((char *) kmm) + kmmsz;
-}
-
-void *
-kernel_malloc(SIZE size)
-{
-	if (((char *) kmm_brk) - ((char *) kmm) >= size) {
-		kmm_brk = ((char *) kmm_brk) - size;
-		return(kmm_brk);
-	}
-	else {
-		return(NULL);
-	}
-}
-
-void
-kernel_free(void *ptr)
-{
-}
-
-#endif /* OMIT_KMM_ALLOCONLY */
-#endif /* TOPPERS_kermem */

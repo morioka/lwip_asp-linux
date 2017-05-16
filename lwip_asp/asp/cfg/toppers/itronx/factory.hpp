@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2008 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -53,6 +53,7 @@
 #include "toppers/itronx/static_api.hpp"
 #include "toppers/itronx/cfg1_out.hpp"
 #include "toppers/itronx/checker.hpp"
+#include "toppers/itronx/component.hpp"
 
 namespace toppers
 {
@@ -67,6 +68,12 @@ namespace toppers
     class factory
     {
     public:
+      typedef itronx::cfg1_out cfg1_out;
+      typedef itronx::checker checker;
+      typedef std::map< std::string, static_api::info > cfg_info;
+      typedef itronx::component component;
+      static bool const is_itronx = true;
+
       explicit factory( std::string const& kernel );
       virtual ~factory();
       std::map< std::string, static_api::info > const* get_static_api_info_map() const;
@@ -79,15 +86,23 @@ namespace toppers
       {
         return do_create_checker();
       }
+      std::auto_ptr< macro_processor > create_macro_processor( cfg1_out const& cfg1out ) const;
       std::auto_ptr< macro_processor > create_macro_processor( cfg1_out const& cfg1out, cfg1_out::static_api_map const& api_map ) const
       {
         return do_create_macro_processor( cfg1out, api_map );
       }
-      std::auto_ptr< macro_processor > create_macro_processor( cfg1_out const& cfg1out, std::vector< static_api > const& api_array ) const
+      std::auto_ptr< macro_processor > create_macro_processor( cfg1_out const& cfg1out, std::auto_ptr< component >& component_ptr ) const
       {
-        return do_create_macro_processor( cfg1out, api_array );
+        std::auto_ptr< macro_processor > mproc( do_create_macro_processor( cfg1out, cfg1out.get_static_api_array() ) );
+        component_ptr.reset( new component( mproc.get() ) );
+        return mproc;
       }
       void swap( factory& other ) { do_swap( other ); }
+
+      cfg_info const& get_cfg_info() const
+      {
+        return *get_static_api_info_map();
+      }
     protected:
       virtual void do_swap( factory& other );
       virtual std::auto_ptr< macro_processor > do_create_macro_processor( cfg1_out const& cfg1out, cfg1_out::static_api_map const& api_map ) const;

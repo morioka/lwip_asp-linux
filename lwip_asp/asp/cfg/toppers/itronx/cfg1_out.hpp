@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2010 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -79,6 +79,7 @@ namespace toppers
         std::string value2;
       };
       typedef std::map< std::string, std::vector< static_api > > static_api_map;
+      typedef static_api_map cfg_element_map;
       typedef std::vector< cfg1_def_t > cfg1_def_table;
 
       explicit cfg1_out( std::string const& filename, cfg1_def_table const* def_table = 0 );

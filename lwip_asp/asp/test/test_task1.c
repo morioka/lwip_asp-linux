@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_task1.c 1577 2009-05-31 14:30:51Z ertl-hiro $
+ *  $Id: test_task1.c 2534 2013-10-13 12:27:37Z ertl-hiro $
  */
 
 /* 
@@ -152,15 +152,18 @@
 #include "kernel_cfg.h"
 #include "test_task1.h"
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 alarm1_handler(intptr_t exinf)
 {
-	ER		ercd;
 	ID		tskid;
+	ER_UINT	ercd;
 
 	check_point(35);
 	ercd = iget_tid(&tskid);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskid == TSK_NONE);
 
 	check_point(36);
@@ -176,7 +179,9 @@ alarm1_handler(intptr_t exinf)
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
+
+	test_start(__FILE__);
 
 	check_point(1);
 	ercd = act_tsk(TASK2);
@@ -227,14 +232,13 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(38);
-
 	check_point(0);
 }
 
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(2);
 	ercd = slp_tsk();
@@ -246,7 +250,7 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(6);
 	ercd = slp_tsk();
@@ -262,7 +266,7 @@ task3(intptr_t exinf)
 void
 task4(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(7);
 	ercd = wup_tsk(TASK1);
@@ -282,7 +286,7 @@ task4(intptr_t exinf)
 void
 task5(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(16);
 	ercd = slp_tsk();
@@ -302,7 +306,7 @@ task5(intptr_t exinf)
 void
 task6(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(17);
 	ercd = dis_dsp();

@@ -116,6 +116,7 @@
 /*
  *  overrun.c
  */
+#define ovrtimer_flag				_kernel_ovrtimer_flag
 #define initialize_overrun			_kernel_initialize_overrun
 #define ovrtimer_start				_kernel_ovrtimer_start
 #define ovrtimer_stop				_kernel_ovrtimer_stop
@@ -148,14 +149,14 @@
 #define flginib_table				_kernel_flginib_table
 #define flgcb_table					_kernel_flgcb_table
 #define tmax_dtqid					_kernel_tmax_dtqid
-#define dtqcb_table					_kernel_dtqcb_table
 #define dtqinib_table				_kernel_dtqinib_table
+#define dtqcb_table					_kernel_dtqcb_table
 #define tmax_pdqid					_kernel_tmax_pdqid
-#define pdqcb_table					_kernel_pdqcb_table
 #define pdqinib_table				_kernel_pdqinib_table
+#define pdqcb_table					_kernel_pdqcb_table
 #define tmax_mbxid					_kernel_tmax_mbxid
-#define mbxcb_table					_kernel_mbxcb_table
 #define mbxinib_table				_kernel_mbxinib_table
+#define mbxcb_table					_kernel_mbxcb_table
 #define tmax_mpfid					_kernel_tmax_mpfid
 #define mpfinib_table				_kernel_mpfinib_table
 #define mpfcb_table					_kernel_mpfcb_table
@@ -293,6 +294,7 @@
 /*
  *  overrun.c
  */
+#define _ovrtimer_flag				__kernel_ovrtimer_flag
 #define _initialize_overrun			__kernel_initialize_overrun
 #define _ovrtimer_start				__kernel_ovrtimer_start
 #define _ovrtimer_stop				__kernel_ovrtimer_stop
@@ -325,14 +327,14 @@
 #define _flginib_table				__kernel_flginib_table
 #define _flgcb_table				__kernel_flgcb_table
 #define _tmax_dtqid					__kernel_tmax_dtqid
-#define _dtqcb_table				__kernel_dtqcb_table
 #define _dtqinib_table				__kernel_dtqinib_table
+#define _dtqcb_table				__kernel_dtqcb_table
 #define _tmax_pdqid					__kernel_tmax_pdqid
-#define _pdqcb_table				__kernel_pdqcb_table
 #define _pdqinib_table				__kernel_pdqinib_table
+#define _pdqcb_table				__kernel_pdqcb_table
 #define _tmax_mbxid					__kernel_tmax_mbxid
-#define _mbxcb_table				__kernel_mbxcb_table
 #define _mbxinib_table				__kernel_mbxinib_table
+#define _mbxcb_table				__kernel_mbxcb_table
 #define _tmax_mpfid					__kernel_tmax_mpfid
 #define _mpfinib_table				__kernel_mpfinib_table
 #define _mpfcb_table				__kernel_mpfcb_table

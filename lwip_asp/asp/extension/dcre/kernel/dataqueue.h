@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2013 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: dataqueue.h 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: dataqueue.h 2515 2013-06-12 11:56:59Z ertl-hiro $
  */
 
 /*
@@ -47,7 +47,7 @@
 #ifndef TOPPERS_DATAQUEUE_H
 #define TOPPERS_DATAQUEUE_H
 
-#include <queue.h>
+#include "wait.h"
 
 /*
  *  データ管理ブロック
@@ -150,7 +150,7 @@ extern void	dequeue_data(DTQCB *p_dtqcb, intptr_t *p_data);
 /*
  *  データキューへのデータ送信
  */
-extern bool_t	send_data(DTQCB *p_dtqcb, intptr_t data, bool_t *p_reqdsp);
+extern bool_t	send_data(DTQCB *p_dtqcb, intptr_t data, bool_t *p_dspreq);
 
 /*
  *  データキューへのデータ強制送信
@@ -161,6 +161,6 @@ extern bool_t	force_send_data(DTQCB *p_dtqcb, intptr_t data);
  *  データキューからのデータ受信
  */
 extern bool_t	receive_data(DTQCB *p_dtqcb, intptr_t *p_data,
-													bool_t *p_reqdsp);
+													bool_t *p_dspreq);
 
 #endif /* TOPPERS_DATAQUEUE_H */

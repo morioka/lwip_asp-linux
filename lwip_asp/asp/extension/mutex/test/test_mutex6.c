@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2009 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mutex6.c 1696 2010-01-01 16:01:25Z ertl-hiro $
+ *  $Id: test_mutex6.c 2606 2014-01-11 14:15:55Z ertl-hiro $
  */
 
 /* 
@@ -195,8 +195,8 @@
  *	//		高：TASK2，低：TASK1，MTX1：TASK2→TASK3，MTX2：TASK2→TASK4
  *	== TASK2-4（続き）==
  *	29:	ext_tsk() -> noreturn			... (A-4)
- *	//		高：TASK3→TASK4，低：TASK1，MTX1：TASK3，MTX2：TASK4
- *	== TASK3（続き）==
+ *	//		高：TASK4→TASK3，低：TASK1，MTX1：TASK3，MTX2：TASK4
+ *	== TASK4（続き）==
  *	30:	ref_mtx(MTX1, &rmtx)
  *		assert(rmtx.htskid == TASK3)
  *		assert(rmtx.wtskid == TSK_NONE)
@@ -206,8 +206,8 @@
  *		get_pri(TPRI_SELF, &tskpri)
  *		assert(tskpri == HIGH_PRIORITY)
  *		ext_tsk() -> noreturn
- *	//		高：TASK4，低：TASK1，MTX2：TASK4
- *	== TASK4（続き）==
+ *	//		高：TASK3，低：TASK1，MTX2：TASK4
+ *	== TASK3（続き）==
  *	31:	get_pri(TPRI_SELF, &tskpri)
  *		assert(tskpri == HIGH_PRIORITY)
  *		ext_tsk() -> noreturn
@@ -218,18 +218,21 @@
 
 #include <kernel.h>
 #include <t_syslog.h>
-#include "syssvc/logtask.h"
 #include "kernel_cfg.h"
 #include "test_lib.h"
 #include "test_mutex6.h"
 
 extern ER	bit_mutex(void);
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	T_RMTX	rmtx;
+
+	test_start(__FILE__);
 
 	set_bit_func(bit_mutex);
 
@@ -244,7 +247,9 @@ task1(intptr_t exinf)
 	check_point(5);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TSK_NONE);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	check_point(6);
@@ -273,12 +278,16 @@ task1(intptr_t exinf)
 	check_point(18);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TSK_NONE);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	ercd = ref_mtx(MTX2, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TSK_NONE);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	check_point(19);
@@ -304,7 +313,6 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(32);
-
 	check_point(0);
 }
 
@@ -313,7 +321,7 @@ static uint_t	task2_count = 0;
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	switch (++task2_count) {
 	case 1:
@@ -377,6 +385,9 @@ task2(intptr_t exinf)
 		ercd = ext_tsk();
 
 		check_point(0);
+
+	default:
+		check_point(0);
 	}
 	check_point(0);
 }
@@ -384,7 +395,7 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
 	T_RMTX	rmtx;
 
@@ -395,11 +406,14 @@ task3(intptr_t exinf)
 	check_point(13);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK3);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	ercd = get_pri(TPRI_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	ercd = unl_mtx(MTX1);
@@ -412,19 +426,10 @@ task3(intptr_t exinf)
 	ercd = loc_mtx(MTX1);
 	check_ercd(ercd, E_OK);
 
-	check_point(30);
-	ercd = ref_mtx(MTX1, &rmtx);
-	check_ercd(ercd, E_OK);
-	check_assert(rmtx.htskid == TASK3);
-	check_assert(rmtx.wtskid == TSK_NONE);
-
-	ercd = ref_mtx(MTX2, &rmtx);
-	check_ercd(ercd, E_OK);
-	check_assert(rmtx.htskid == TASK4);
-	check_assert(rmtx.wtskid == TSK_NONE);
-
+	check_point(31);
 	ercd = get_pri(TPRI_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	ercd = ext_tsk();
@@ -435,16 +440,32 @@ task3(intptr_t exinf)
 void
 task4(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	PRI		tskpri;
+	T_RMTX	rmtx;
 
 	check_point(26);
 	ercd = loc_mtx(MTX2);
 	check_ercd(ercd, E_OK);
 
-	check_point(31);
+	check_point(30);
+	ercd = ref_mtx(MTX1, &rmtx);
+	check_ercd(ercd, E_OK);
+
+	check_assert(rmtx.htskid == TASK3);
+
+	check_assert(rmtx.wtskid == TSK_NONE);
+
+	ercd = ref_mtx(MTX2, &rmtx);
+	check_ercd(ercd, E_OK);
+
+	check_assert(rmtx.htskid == TASK4);
+
+	check_assert(rmtx.wtskid == TSK_NONE);
+
 	ercd = get_pri(TPRI_SELF, &tskpri);
 	check_ercd(ercd, E_OK);
+
 	check_assert(tskpri == HIGH_PRIORITY);
 
 	ercd = ext_tsk();

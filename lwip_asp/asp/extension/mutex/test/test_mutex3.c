@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007,2008 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mutex3.c 1696 2010-01-01 16:01:25Z ertl-hiro $
+ *  $Id: test_mutex3.c 2656 2014-08-17 13:09:30Z ertl-hiro $
  */
 
 /* 
@@ -50,11 +50,11 @@
  *
  *	(A) ミューテックスのロック処理（loc_mtx）
  *		(A-1) ロックされていない場合には，すぐにロックできること
- *		(A-2) 多重にロックしようとすると，E_ILUSEエラーになること
+ *		(A-2) 多重にロックしようとすると，E_OBJエラーになること
  *		(A-3) ロックされている場合には，優先度順で待ち状態になること
  *	(B) ミューテックスのロック解除処理（unl_mtx）
  *		(B-1) 他タスクがロックしているミューテックスを解放しようとすると
- *		　　　E_ILUSEエラーになること
+ *		　　　E_OBJエラーになること
  *		(B-2) 待ちタスクがないと，単にロック解除すること
  *		(B-3) 待ちタスクにロックを渡すこと
  *		(B-4) 待ちタスクにロックを渡して，ディスパッチが起こること
@@ -84,7 +84,7 @@
  *	2:	ref_tsk(TASK1, &rtsk)
  *		assert(rtsk.tskpri == HIGH_PRIORITY)
  *		assert(rtsk.tskbpri == LOW_PRIORITY)
- *		loc_mtx(MTX1) -> E_ILUSE		... (A-2)
+ *		loc_mtx(MTX1) -> E_OBJ			... (A-2)
  *	3:	ref_mtx(MTX1, &rmtx)
  *		assert(rmtx.htskid == TASK1)
  *		assert(rmtx.wtskid == TSK_NONE)
@@ -100,7 +100,7 @@
  *		act_tsk(TASK3)
  *	7:	tslp_tsk(10) -> E_TMOUT
  *	== TASK3（優先度：高）==
- *	8:	unl_mtx(MTX1) -> E_ILUSE		... (B-1)
+ *	8:	unl_mtx(MTX1) -> E_OBJ			... (B-1)
  *	9:	loc_mtx(MTX1)					... (A-3)
  *	== TASK1（続き）==
  *	10:	ref_mtx(MTX1, &rmtx)
@@ -139,26 +139,31 @@
 
 #include <kernel.h>
 #include <t_syslog.h>
-#include "syssvc/logtask.h"
 #include "kernel_cfg.h"
 #include "test_lib.h"
 #include "test_mutex.h"
 
 extern ER	bit_mutex(void);
 
+/* DO NOT DELETE THIS LINE -- gentest depends on it. */
+
 void
 task1(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	T_RTSK	rtsk;
 	T_RMTX	rmtx;
+
+	test_start(__FILE__);
 
 	set_bit_func(bit_mutex);
 
 	check_point(1);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TSK_NONE);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	ercd = loc_mtx(MTX1);
@@ -167,16 +172,20 @@ task1(intptr_t exinf)
 	check_point(2);
 	ercd = ref_tsk(TASK1, &rtsk);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rtsk.tskpri == HIGH_PRIORITY);
+
 	check_assert(rtsk.tskbpri == LOW_PRIORITY);
 
 	ercd = loc_mtx(MTX1);
-	check_ercd(ercd, E_ILUSE);
+	check_ercd(ercd, E_OBJ);
 
 	check_point(3);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK1);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	ercd = act_tsk(TASK2);
@@ -189,7 +198,9 @@ task1(intptr_t exinf)
 	check_point(6);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK1);
+
 	check_assert(rmtx.wtskid == TASK2);
 
 	ercd = act_tsk(TASK3);
@@ -202,7 +213,9 @@ task1(intptr_t exinf)
 	check_point(10);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK1);
+
 	check_assert(rmtx.wtskid == TASK3);
 
 	ercd = dis_dsp();
@@ -214,12 +227,16 @@ task1(intptr_t exinf)
 	check_point(11);
 	ercd = ref_tsk(TASK1, &rtsk);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rtsk.tskpri == LOW_PRIORITY);
+
 	check_assert(rtsk.tskbpri == LOW_PRIORITY);
 
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK3);
+
 	check_assert(rmtx.wtskid == TASK2);
 
 	ercd = ena_dsp();
@@ -228,7 +245,9 @@ task1(intptr_t exinf)
 	check_point(16);
 	ercd = ref_mtx(MTX1, &rmtx);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rmtx.htskid == TASK2);
+
 	check_assert(rmtx.wtskid == TSK_NONE);
 
 	ercd = tloc_mtx(MTX1, 10);
@@ -239,14 +258,13 @@ task1(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	check_finish(20);
-
 	check_point(0);
 }
 
 void
 task2(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 	T_RTSK	rtsk;
 
 	check_point(5);
@@ -259,7 +277,9 @@ task2(intptr_t exinf)
 	check_point(13);
 	ercd = ref_tsk(TASK2, &rtsk);
 	check_ercd(ercd, E_OK);
+
 	check_assert(rtsk.tskpri == HIGH_PRIORITY);
+
 	check_assert(rtsk.tskbpri == MID_PRIORITY);
 
 	ercd = unl_mtx(MTX1);
@@ -286,11 +306,11 @@ task2(intptr_t exinf)
 void
 task3(intptr_t exinf)
 {
-	ER		ercd;
+	ER_UINT	ercd;
 
 	check_point(8);
 	ercd = unl_mtx(MTX1);
-	check_ercd(ercd, E_ILUSE);
+	check_ercd(ercd, E_OBJ);
 
 	check_point(9);
 	ercd = loc_mtx(MTX1);

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: sample1.h 1968 2010-11-20 11:00:07Z ertl-hiro $
+ *  $Id: sample1.h 2416 2012-09-07 08:06:20Z ertl-hiro $
  */
 
 /*
@@ -56,7 +56,7 @@
 #define MAIN_PRIORITY	5		/* メインタスクの優先度 */
 								/* HIGH_PRIORITYより高くすること */
 
-#define HIGH_PRIORITY	9		/* 並列に実行されるタスクの優先度 */
+#define HIGH_PRIORITY	9		/* 並行実行されるタスクの優先度 */
 #define MID_PRIORITY	10
 #define LOW_PRIORITY	11
 
@@ -71,10 +71,6 @@
 #ifndef STACK_SIZE
 #define	STACK_SIZE		4096		/* タスクのスタックサイズ */
 #endif /* STACK_SIZE */
-
-#ifndef KMM_SIZE
-#define	KMM_SIZE		(STACK_SIZE * 16)	/* カーネルが割り付ける   */
-#endif /* KMM_SIZE */						/*     メモリ領域のサイズ */
 
 #ifndef LOOP_REF
 #define LOOP_REF		ULONG_C(1000000)	/* 速度計測用のループ回数 */

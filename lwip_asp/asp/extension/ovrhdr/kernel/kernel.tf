@@ -5,7 +5,7 @@ $       Toyohashi Open Platform for Embedded Real-Time Systems/
 $       Advanced Standard Profile Kernel
 $ 
 $   Copyright (C) 2007 by TAKAGI Nobuhisa
-$   Copyright (C) 2007-2011 by Embedded and Real-Time Systems Laboratory
+$   Copyright (C) 2007-2013 by Embedded and Real-Time Systems Laboratory
 $               Graduate School of Information Science, Nagoya Univ., JAPAN
 $  
 $   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@ $   に対する適合性も含めて，いかなる保証も行わない．ま�
 $   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 $   の責任を負わない．
 $ 
-$   $Id: kernel.tf 2024 2011-01-02 08:59:23Z ertl-hiro $
+$   $Id: kernel.tf 2661 2014-09-28 09:32:49Z ertl-hiro $
 $  
 $ =====================================================================
 
@@ -98,10 +98,6 @@ $FILE "kernel_cfg.c"$
 /* kernel_cfg.c */$NL$
 #include "kernel/kernel_int.h"$NL$
 #include "kernel_cfg.h"$NL$
-$NL$
-#ifndef TOPPERS_EMPTY_LABEL$NL$
-#define TOPPERS_EMPTY_LABEL(x,y) x y[0]$NL$
-#endif$NL$
 $NL$
 #if TKERNEL_PRID != 0x07u$NL$
 #error The kernel does not match this configuration file.$NL$
@@ -208,11 +204,13 @@ $END$
 
 $ スタック領域の生成とそれに関するエラーチェック
 $FOREACH tskid TSK.ID_LIST$
-$	// stkszが0か，ターゲット定義の最小値（TARGET_MIN_STKSZ）よりも小さい場合（E_PAR）
-	$IF TSK.STKSZ[tskid] == 0 || (TARGET_MIN_STKSZ
+$	// stkszが0以下か，ターゲット定義の最小値（TARGET_MIN_STKSZ）よりも
+$	// 小さい場合（E_PAR）
+	$IF TSK.STKSZ[tskid] <= 0 || (TARGET_MIN_STKSZ
 									&& TSK.STKSZ[tskid] < TARGET_MIN_STKSZ)$
 		$ERROR TSK.TEXT_LINE[tskid]$E_PAR: $FORMAT(_("%1% `%2%\' of `%3%\' in %4% is too small"), "stksz", TSK.STKSZ[tskid], tskid, "CRE_TSK")$$END$
 	$END$
+
 $ 	// stkszがスタック領域のサイズとして正しくない場合（E_PAR）
 	$IF !EQ(TSK.STK[tskid], "NULL") && CHECK_STKSZ_ALIGN
 							&& (TSK.STKSZ[tskid] & (CHECK_STKSZ_ALIGN - 1))$
@@ -225,7 +223,7 @@ $ 	// stkszがスタック領域のサイズとして正しくない場合（E_P
 		$TSK.TINIB_STK[tskid] = CONCAT("_kernel_stack_", tskid)$
 	$ELSE$
 		$TSK.TINIB_STKSZ[tskid] = TSK.STKSZ[tskid]$
-		$TSK.TINIB_STK[tskid] = TSK.STK[tskid]$
+		$TSK.TINIB_STK[tskid] = FORMAT("(void *)(%1%)", TSK.STK[tskid])$
 	$END$
 $END$
 $NL$
@@ -326,6 +324,11 @@ $		// flgatrが（［TA_TPRI］｜［TA_WMUL］｜［TA_CLR］）でない場合
 			$ERROR FLG.TEXT_LINE[flgid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "flgatr", FLG.FLGATR[flgid], flgid, "CRE_FLG")$$END$
 		$END$
 
+$		// iflgptnがFLGPTNに格納できない場合（E_PAR）
+		$IF (FLG.IFLGPTN[flgid] & ~((1 << TBIT_FLGPTN) - 1)) != 0$
+			$ERROR FLG.TEXT_LINE[flgid]$E_PAR: $FORMAT(_("too large %1% `%2%\' of `%3%\' in %4%"), "iflgptn", FLG.IFLGPTN[flgid], flgid, "CRE_FLG")$$END$
+		$END$
+
 $		// イベントフラグ初期化ブロック
 		$TAB${ ($FLG.FLGATR[flgid]$), ($FLG.IFLGPTN[flgid]$) }
 	$END$$NL$
@@ -356,6 +359,11 @@ $IF LENGTH(DTQ.ID_LIST)$
 $		// dtqatrが（［TA_TPRI］）でない場合（E_RSATR）
 		$IF (DTQ.DTQATR[dtqid] & ~TA_TPRI) != 0$
 			$ERROR DTQ.TEXT_LINE[dtqid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "dtqatr", DTQ.DTQATR[dtqid], dtqid, "CRE_DTQ")$$END$
+		$END$
+
+$		// dtqcntが負の場合（E_PAR）
+		$IF DTQ.DTQCNT[dtqid] < 0$
+			$ERROR DTQ.TEXT_LINE[dtqid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "dtqcnt", DTQ.DTQCNT[dtqid], dtqid, "CRE_DTQ")$$END$
 		$END$
 
 $		// dtqmbがNULLでない場合（E_NOSPT）
@@ -401,6 +409,11 @@ $IF LENGTH(PDQ.ID_LIST)$
 $		// pdqatrが（［TA_TPRI］）でない場合（E_RSATR）
 		$IF (PDQ.PDQATR[pdqid] & ~TA_TPRI) != 0$
 			$ERROR PDQ.TEXT_LINE[pdqid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "pdqatr", PDQ.PDQATR[pdqid], pdqid, "CRE_PDQ")$$END$
+		$END$
+
+$		// pdqcntが負の場合（E_PAR）
+		$IF PDQ.PDQCNT[pdqid] < 0$
+			$ERROR PDQ.TEXT_LINE[pdqid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "pdqcnt", PDQ.PDQCNT[pdqid], pdqid, "CRE_PDQ")$$END$
 		$END$
 
 $		// (TMIN_DPRI <= maxdpri && maxdpri <= TMAX_DPRI)でない場合（E_PAR）
@@ -497,13 +510,13 @@ $		// mpfatrが（［TA_TPRI］）でない場合（E_RSATR）
 			$ERROR MPF.TEXT_LINE[mpfid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "mpfatr", MPF.MPFATR[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
-$		// blkcntが0の場合（E_PAR）
-		$IF MPF.BLKCNT[mpfid] == 0$
+$		// blkcntが0以下の場合（E_PAR）
+		$IF MPF.BLKCNT[mpfid] <= 0$
 			$ERROR MPF.TEXT_LINE[mpfid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "blkcnt", MPF.BLKCNT[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
-$		// blkszが0の場合（E_PAR）
-		$IF MPF.BLKSZ[mpfid] == 0$
+$		// blkszが0以下の場合（E_PAR）
+		$IF MPF.BLKSZ[mpfid] <= 0$
 			$ERROR MPF.TEXT_LINE[mpfid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "blksz", MPF.BLKSZ[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
@@ -524,7 +537,7 @@ $		// 固定長メモリプール管理領域
 $	// 固定長メモリプール初期化ブロックの生成
 	const MPFINIB _kernel_mpfinib_table[TNUM_MPFID] = {$NL$
 	$JOINEACH mpfid MPF.ID_LIST ",\n"$
-		$TAB${ ($MPF.MPFATR[mpfid]$), ($MPF.BLKCNT[mpfid]$), ROUND_MPF_T($MPF.BLKSZ[mpfid]$), $IF EQ(MPF.MPF[mpfid],"NULL")$(_kernel_mpf_$mpfid$)$ELSE$($MPF.MPF[mpfid]$)$END$, (_kernel_mpfmb_$mpfid$) }
+		$TAB${ ($MPF.MPFATR[mpfid]$), ($MPF.BLKCNT[mpfid]$), ROUND_MPF_T($MPF.BLKSZ[mpfid]$), $IF EQ(MPF.MPF[mpfid],"NULL")$(_kernel_mpf_$mpfid$)$ELSE$(void *)($MPF.MPF[mpfid]$)$END$, (_kernel_mpfmb_$mpfid$) }
 	$END$$NL$
 	};$NL$
 	$NL$
@@ -622,27 +635,37 @@ $END$$NL$
 $ 
 $  オーバランハンドラ
 $ 
-/*$NL$
-$SPC$*  Overrun Handler Functions$NL$
-$SPC$*/$NL$
-$NL$
+$IF !TOPPERS_SUPPORT_OVRHDR$
+$	// オーバランハンドラがサポートされていない場合
+	$IF LENGTH(OVR.ORDER_LIST)$
+		$ERROR$E_NOSPT: $FORMAT(_("%1% is not supported on this target"), "DEF_OVR")$$END$
+	$END$
+$ELSE$
+	/*$NL$
+	$SPC$*  Overrun Handler Functions$NL$
+	$SPC$*/$NL$
+	$NL$
 
 $	// 静的API「DEF_OVR」が複数ある（E_OBJ）
-$IF LENGTH(OVR.ORDER_LIST) > 1$
-	$ERROR$E_OBJ: $FORMAT(_("too many %1%"), "DEF_OVR")$$END$
-$END$
+	$IF LENGTH(OVR.ORDER_LIST) > 1$
+		$ERROR$E_OBJ: $FORMAT(_("too many %1%"), "DEF_OVR")$$END$
+	$END$
 
-$ オーバランハンドラ初期化ブロックの生成
-#ifdef TOPPERS_SUPPORT_OVRHDR$NL$$NL$
-const OVRINIB _kernel_ovrinib = {$NL$
-$IF LENGTH(OVR.ORDER_LIST)$
-	$TAB$($OVR.OVRATR[1]$), ($OVR.OVRHDR[1]$)$NL$
-$ELSE$
-	$TAB$TA_NULL, NULL$NL$
+$	// ovratrが（TA_NULL）でない場合（E_RSATR）
+	$IF OVR.OVRATR[1] != 0$
+		$ERROR OVR.TEXT_LINE[1]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "ovratr", OVR.OVRATR[1], "DEF_OVR")$
+		$END$
+	$END$
+
+$	// オーバランハンドラ初期化ブロックの生成
+	const OVRINIB _kernel_ovrinib = {$NL$
+	$IF LENGTH(OVR.ORDER_LIST)$
+		$TAB$($OVR.OVRATR[1]$), ($OVR.OVRHDR[1]$)$NL$
+	$ELSE$
+		$TAB$TA_NULL, NULL$NL$
+	$END$
+	};$NL$$NL$
 $END$
-};$NL$$NL$
-#endif /* TOPPERS_SUPPORT_OVRHDR */$NL$
-$NL$
 
 $ 
 $  割込み管理機能
@@ -885,7 +908,7 @@ $END$$NL$
 $END$
 
 $ 割込み要求ラインの初期化に必要な情報
-$IF !OMIT_INITIALIZE_INTERRUPT || ALT(USE_INHINTB_TABLE,0)$
+$IF !OMIT_INITIALIZE_INTERRUPT || ALT(USE_INTINIB_TABLE,0)$
 
 $ 割込み要求ライン数
 #define TNUM_INTNO	$LENGTH(INT.ORDER_LIST)$$NL$
@@ -989,6 +1012,13 @@ $	// 静的API「DEF_ICS」が複数ある（E_OBJ）
 		$ERROR$E_OBJ: $FORMAT(_("too many %1%"), "DEF_ICS")$$END$
 	$END$
 
+$	// istkszが0以下か，ターゲット定義の最小値（TARGET_MIN_ISTKSZ）よりも
+$	// 小さい場合（E_PAR）
+	$IF ICS.ISTKSZ[1] <= 0 || (TARGET_MIN_ISTKSZ
+									&& ICS.ISTKSZ[1] < TARGET_MIN_ISTKSZ)$
+		$ERROR ICS.TEXT_LINE[1]$E_PAR: $FORMAT(_("%1% `%2%\' in %3% is too small"), "istksz", ICS.ISTKSZ[1], "DEF_ICS")$$END$
+	$END$
+
 $ 	// istkszがスタック領域のサイズとして正しくない場合（E_PAR）
 	$IF !EQ(ICS.ISTK[1], "NULL") && CHECK_STKSZ_ALIGN
 							&& (ICS.ISTKSZ[1] & (CHECK_STKSZ_ALIGN - 1))$
@@ -1002,7 +1032,7 @@ $		// スタック領域の自動割付け
 		#define TOPPERS_ISTK		_kernel_istack$NL$
 	$ELSE$
 		#define TOPPERS_ISTKSZ		($ICS.ISTKSZ[1]$)$NL$
-		#define TOPPERS_ISTK		($ICS.ISTK[1]$)$NL$
+		#define TOPPERS_ISTK		(void *)($ICS.ISTK[1]$)$NL$
 	$END$
 $END$
 $NL$
@@ -1037,17 +1067,15 @@ void$NL$
 _kernel_initialize_object(void)$NL$
 {$NL$
 $TAB$_kernel_initialize_task();$NL$
-$IF LENGTH(SEM.ID_LIST)$	_kernel_initialize_semaphore();$NL$$END$
-$IF LENGTH(FLG.ID_LIST)$	_kernel_initialize_eventflag();$NL$$END$
-$IF LENGTH(DTQ.ID_LIST)$	_kernel_initialize_dataqueue();$NL$$END$
-$IF LENGTH(PDQ.ID_LIST)$	_kernel_initialize_pridataq();$NL$$END$
-$IF LENGTH(MBX.ID_LIST)$	_kernel_initialize_mailbox();$NL$$END$
-$IF LENGTH(MPF.ID_LIST)$	_kernel_initialize_mempfix();$NL$$END$
-$IF LENGTH(CYC.ID_LIST)$	_kernel_initialize_cyclic();$NL$$END$
-$IF LENGTH(ALM.ID_LIST)$	_kernel_initialize_alarm();$NL$$END$
-#ifdef TOPPERS_SUPPORT_OVRHDR$NL$
-$TAB$_kernel_initialize_overrun();$NL$
-#endif /* TOPPERS_SUPPORT_OVRHDR */$NL$
+$IF LENGTH(SEM.ID_LIST)$$TAB$_kernel_initialize_semaphore();$NL$$END$
+$IF LENGTH(FLG.ID_LIST)$$TAB$_kernel_initialize_eventflag();$NL$$END$
+$IF LENGTH(DTQ.ID_LIST)$$TAB$_kernel_initialize_dataqueue();$NL$$END$
+$IF LENGTH(PDQ.ID_LIST)$$TAB$_kernel_initialize_pridataq();$NL$$END$
+$IF LENGTH(MBX.ID_LIST)$$TAB$_kernel_initialize_mailbox();$NL$$END$
+$IF LENGTH(MPF.ID_LIST)$$TAB$_kernel_initialize_mempfix();$NL$$END$
+$IF LENGTH(CYC.ID_LIST)$$TAB$_kernel_initialize_cyclic();$NL$$END$
+$IF LENGTH(ALM.ID_LIST)$$TAB$_kernel_initialize_alarm();$NL$$END$
+$IF TOPPERS_SUPPORT_OVRHDR$$TAB$_kernel_initialize_overrun();$NL$$END$
 $TAB$_kernel_initialize_interrupt();$NL$
 $TAB$_kernel_initialize_exception();$NL$
 }$NL$

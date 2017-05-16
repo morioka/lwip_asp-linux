@@ -5,7 +5,7 @@ $       Toyohashi Open Platform for Embedded Real-Time Systems/
 $       Advanced Standard Profile Kernel
 $ 
 $   Copyright (C) 2007 by TAKAGI Nobuhisa
-$   Copyright (C) 2007-2011 by Embedded and Real-Time Systems Laboratory
+$   Copyright (C) 2007-2014 by Embedded and Real-Time Systems Laboratory
 $               Graduate School of Information Science, Nagoya Univ., JAPAN
 $  
 $   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,70 +37,110 @@ $   に対する適合性も含めて，いかなる保証も行わない．ま�
 $   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 $   の責任を負わない．
 $ 
-$   $Id: kernel.tf 2024 2011-01-02 08:59:23Z ertl-hiro $
+$   $Id: kernel.tf 2651 2014-05-27 08:44:34Z ertl-hiro $
 $  
 $ =====================================================================
 
 $ =====================================================================
-$ AID_XXXの処理
+$ AID_YYYの処理
 $ =====================================================================
 
 $num_atskid = 0$
 $FOREACH i ATSK.ORDER_LIST$
+$	// notskが負の場合（E_PAR）
+	$IF ATSK.NOTSK[i] < 0$
+		$ERROR ATSK.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "notsk", ATSK.NOTSK[i], "AID_TSK")$$END$
+	$END$
 	$num_atskid = num_atskid + ATSK.NOTSK[i]$
 $END$
 $num_tskid = LENGTH(TSK.ID_LIST) + num_atskid$
 
 $num_asemid = 0$
 $FOREACH i ASEM.ORDER_LIST$
+$	// nosemが負の場合（E_PAR）
+	$IF ASEM.NOSEM[i] < 0$
+		$ERROR ASEM.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nosem", ASEM.NOSEM[i], "AID_SEM")$$END$
+	$END$
 	$num_asemid = num_asemid + ASEM.NOSEM[i]$
 $END$
 $num_semid = LENGTH(SEM.ID_LIST) + num_asemid$
 
 $num_aflgid = 0$
 $FOREACH i AFLG.ORDER_LIST$
+$	// noflgが負の場合（E_PAR）
+	$IF AFLG.NOFLG[i] < 0$
+		$ERROR AFLG.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "noflg", AFLG.NOFLG[i], "AID_FLG")$$END$
+	$END$
 	$num_aflgid = num_aflgid + AFLG.NOFLG[i]$
 $END$
 $num_flgid = LENGTH(FLG.ID_LIST) + num_aflgid$
 
 $num_adtqid = 0$
 $FOREACH i ADTQ.ORDER_LIST$
+$	// nodtqが負の場合（E_PAR）
+	$IF ADTQ.NODTQ[i] < 0$
+		$ERROR ADTQ.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nodtq", ADTQ.NODTQ[i], "AID_DTQ")$$END$
+	$END$
 	$num_adtqid = num_adtqid + ADTQ.NODTQ[i]$
 $END$
 $num_dtqid = LENGTH(DTQ.ID_LIST) + num_adtqid$
 
 $num_apdqid = 0$
 $FOREACH i APDQ.ORDER_LIST$
+$	// nopdqが負の場合（E_PAR）
+	$IF APDQ.NOPDQ[i] < 0$
+		$ERROR APDQ.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nopdq", APDQ.NOPDQ[i], "AID_PDQ")$$END$
+	$END$
 	$num_apdqid = num_apdqid + APDQ.NOPDQ[i]$
 $END$
 $num_pdqid = LENGTH(PDQ.ID_LIST) + num_apdqid$
 
 $num_ambxid = 0$
 $FOREACH i AMBX.ORDER_LIST$
+$	// nombxが負の場合（E_PAR）
+	$IF AMBX.NOMBX[i] < 0$
+		$ERROR AMBX.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nombx", AMBX.NOMBX[i], "AID_MBX")$$END$
+	$END$
 	$num_ambxid = num_ambxid + AMBX.NOMBX[i]$
 $END$
 $num_mbxid = LENGTH(MBX.ID_LIST) + num_ambxid$
 
 $num_ampfid = 0$
 $FOREACH i AMPF.ORDER_LIST$
+$	// nompfが負の場合（E_PAR）
+	$IF AMPF.NOMPF[i] < 0$
+		$ERROR AMPF.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nompf", AMPF.NOMPF[i], "AID_MPF")$$END$
+	$END$
 	$num_ampfid = num_ampfid + AMPF.NOMPF[i]$
 $END$
 $num_mpfid = LENGTH(MPF.ID_LIST) + num_ampfid$
 
 $num_acycid = 0$
 $FOREACH i ACYC.ORDER_LIST$
+$	// nocycが負の場合（E_PAR）
+	$IF ACYC.NOCYC[i] < 0$
+		$ERROR ACYC.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "nocyc", ACYC.NOCYC[i], "AID_CYC")$$END$
+	$END$
 	$num_acycid = num_acycid + ACYC.NOCYC[i]$
 $END$
 $num_cycid = LENGTH(CYC.ID_LIST) + num_acycid$
 
 $num_aalmid = 0$
 $FOREACH i AALM.ORDER_LIST$
+$	// noalmが負の場合（E_PAR）
+	$IF AALM.NOALM[i] < 0$
+		$ERROR AALM.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "noalm", AALM.NOALM[i], "AID_ALM")$$END$
+	$END$
 	$num_aalmid = num_aalmid + AALM.NOALM[i]$
 $END$
 $num_almid = LENGTH(ALM.ID_LIST) + num_aalmid$
 
 $num_aisrid = 0$
 $FOREACH i AISR.ORDER_LIST$
+$	// noisrが負の場合（E_PAR）
+	$IF AISR.NOISR[i] < 0$
+		$ERROR AISR.TEXT_LINE[i]$E_PAR: $FORMAT(_("illegal %1% `%2%\' in %3%"), "noisr", AISR.NOISR[i], "AID_ISR")$$END$
+	$END$
 	$num_aisrid = num_aisrid + AISR.NOISR[i]$
 $END$
 $num_isrid = num_aisrid$
@@ -164,10 +204,6 @@ $FILE "kernel_cfg.c"$
 /* kernel_cfg.c */$NL$
 #include "kernel/kernel_int.h"$NL$
 #include "kernel_cfg.h"$NL$
-$NL$
-#ifndef TOPPERS_EMPTY_LABEL$NL$
-#define TOPPERS_EMPTY_LABEL(x,y) x y[0]$NL$
-#endif$NL$
 $NL$
 #if TKERNEL_PRID != 0x07u$NL$
 #error The kernel does not match this configuration file.$NL$
@@ -263,11 +299,13 @@ $END$
 
 $ スタック領域の生成とそれに関するエラーチェック
 $FOREACH tskid TSK.ID_LIST$
-$	// stkszが0か，ターゲット定義の最小値（TARGET_MIN_STKSZ）よりも小さい場合（E_PAR）
-	$IF TSK.STKSZ[tskid] == 0 || (TARGET_MIN_STKSZ
+$	// stkszが0以下か，ターゲット定義の最小値（TARGET_MIN_STKSZ）よりも
+$	// 小さい場合（E_PAR）
+	$IF TSK.STKSZ[tskid] <= 0 || (TARGET_MIN_STKSZ
 									&& TSK.STKSZ[tskid] < TARGET_MIN_STKSZ)$
 		$ERROR TSK.TEXT_LINE[tskid]$E_PAR: $FORMAT(_("%1% `%2%\' of `%3%\' in %4% is too small"), "stksz", TSK.STKSZ[tskid], tskid, "CRE_TSK")$$END$
 	$END$
+
 $ 	// stkszがスタック領域のサイズとして正しくない場合（E_PAR）
 	$IF !EQ(TSK.STK[tskid], "NULL") && CHECK_STKSZ_ALIGN
 							&& (TSK.STKSZ[tskid] & (CHECK_STKSZ_ALIGN - 1))$
@@ -280,7 +318,7 @@ $ 	// stkszがスタック領域のサイズとして正しくない場合（E_P
 		$TSK.TINIB_STK[tskid] = CONCAT("_kernel_stack_", tskid)$
 	$ELSE$
 		$TSK.TINIB_STKSZ[tskid] = TSK.STKSZ[tskid]$
-		$TSK.TINIB_STK[tskid] = TSK.STK[tskid]$
+		$TSK.TINIB_STK[tskid] = FORMAT("(void *)(%1%)", TSK.STK[tskid])$
 	$END$
 $END$
 $NL$
@@ -375,7 +413,7 @@ $ELSE$
 $END$$NL$
 
 $ セマフォ管理ブロックの生成
-$IF num_semid$
+$IF num_semid > 0$
 	SEMCB _kernel_semcb_table[TNUM_SEMID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(SEMCB, _kernel_semcb_table);$NL$
@@ -407,6 +445,11 @@ $		// flgatrが（［TA_TPRI］｜［TA_WMUL］｜［TA_CLR］）でない場合
 			$ERROR FLG.TEXT_LINE[flgid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "flgatr", FLG.FLGATR[flgid], flgid, "CRE_FLG")$$END$
 		$END$
 
+$		// iflgptnがFLGPTNに格納できない場合（E_PAR）
+		$IF (FLG.IFLGPTN[flgid] & ~((1 << TBIT_FLGPTN) - 1)) != 0$
+			$ERROR FLG.TEXT_LINE[flgid]$E_PAR: $FORMAT(_("too large %1% `%2%\' of `%3%\' in %4%"), "iflgptn", FLG.IFLGPTN[flgid], flgid, "CRE_FLG")$$END$
+		$END$
+
 $		// イベントフラグ初期化ブロック
 		$TAB${ ($FLG.FLGATR[flgid]$), ($FLG.IFLGPTN[flgid]$) }
 	$END$$NL$
@@ -423,7 +466,7 @@ $ELSE$
 $END$$NL$
 
 $ イベントフラグ管理ブロックの生成
-$IF num_flgid$
+$IF num_flgid > 0$
 	FLGCB _kernel_flgcb_table[TNUM_FLGID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(FLGCB, _kernel_flgcb_table);$NL$
@@ -453,14 +496,19 @@ $		// dtqatrが（［TA_TPRI］）でない場合（E_RSATR）
 			$ERROR DTQ.TEXT_LINE[dtqid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "dtqatr", DTQ.DTQATR[dtqid], dtqid, "CRE_DTQ")$$END$
 		$END$
 
+$		// dtqcntが負の場合（E_PAR）
+		$IF DTQ.DTQCNT[dtqid] < 0$
+			$ERROR DTQ.TEXT_LINE[dtqid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "dtqcnt", DTQ.DTQCNT[dtqid], dtqid, "CRE_DTQ")$$END$
+		$END$
+
 $		// dtqmbがNULLでない場合（E_NOSPT）
 		$IF !EQ(DTQ.DTQMB[dtqid], "NULL")$
 			$ERROR DTQ.TEXT_LINE[dtqid]$E_NOSPT: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "dtqmb", DTQ.DTQMB[dtqid], dtqid, "CRE_DTQ")$$END$
 		$END$
 
-$		// データキュー領域
+$		// データキュー管理領域
 		$IF DTQ.DTQCNT[dtqid]$
-			static intptr_t _kernel_dtqmb_$dtqid$[$DTQ.DTQCNT[dtqid]$];$NL$
+			static DTQMB _kernel_dtqmb_$dtqid$[$DTQ.DTQCNT[dtqid]$];$NL$
 		$END$
 	$END$
 
@@ -482,7 +530,7 @@ $ELSE$
 $END$$NL$
 
 $ データキュー管理ブロックの生成
-$IF num_dtqid$
+$IF num_dtqid > 0$
 	DTQCB _kernel_dtqcb_table[TNUM_DTQID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(DTQCB, _kernel_dtqcb_table);$NL$
@@ -512,6 +560,11 @@ $		// pdqatrが（［TA_TPRI］）でない場合（E_RSATR）
 			$ERROR PDQ.TEXT_LINE[pdqid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "pdqatr", PDQ.PDQATR[pdqid], pdqid, "CRE_PDQ")$$END$
 		$END$
 
+$		// pdqcntが負の場合（E_PAR）
+		$IF PDQ.PDQCNT[pdqid] < 0$
+			$ERROR PDQ.TEXT_LINE[pdqid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "pdqcnt", PDQ.PDQCNT[pdqid], pdqid, "CRE_PDQ")$$END$
+		$END$
+
 $		// (TMIN_DPRI <= maxdpri && maxdpri <= TMAX_DPRI)でない場合（E_PAR）
 		$IF !(TMIN_DPRI <= PDQ.MAXDPRI[pdqid] && PDQ.MAXDPRI[pdqid] <= TMAX_DPRI)$
 			$ERROR PDQ.TEXT_LINE[pdqid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "maxdpri", PDQ.MAXDPRI[pdqid], pdqid, "CRE_PDQ")$$END$
@@ -522,7 +575,7 @@ $		// pdqmbがNULLでない場合（E_NOSPT）
 			$ERROR PDQ.TEXT_LINE[pdqid]$E_NOSPT: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "pdqmb", PDQ.PDQMB[pdqid], pdqid, "CRE_PDQ")$$END$
 		$END$
 
-$		// 優先度データキュー領域
+$		// 優先度データキュー管理領域
 		$IF PDQ.PDQCNT[pdqid]$
 			static PDQMB _kernel_pdqmb_$pdqid$[$PDQ.PDQCNT[pdqid]$];$NL$
 		$END$
@@ -546,7 +599,7 @@ $ELSE$
 $END$$NL$
 
 $ 優先度データキュー管理ブロックの生成
-$IF num_pdqid$
+$IF num_pdqid > 0$
 	PDQCB _kernel_pdqcb_table[TNUM_PDQID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(PDQCB, _kernel_pdqcb_table);$NL$
@@ -604,7 +657,7 @@ $ELSE$
 $END$$NL$
 
 $ メールボックス管理ブロックの生成
-$IF num_mbxid$
+$IF num_mbxid > 0$
 	MBXCB _kernel_mbxcb_table[TNUM_MBXID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(MBXCB, _kernel_mbxcb_table);$NL$
@@ -634,13 +687,13 @@ $		// mpfatrが（［TA_TPRI］）でない場合（E_RSATR）
 			$ERROR MPF.TEXT_LINE[mpfid]$E_RSATR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "mpfatr", MPF.MPFATR[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
-$		// blkcntが0の場合（E_PAR）
-		$IF MPF.BLKCNT[mpfid] == 0$
+$		// blkcntが0以下の場合（E_PAR）
+		$IF MPF.BLKCNT[mpfid] <= 0$
 			$ERROR MPF.TEXT_LINE[mpfid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "blkcnt", MPF.BLKCNT[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
-$		// blkszが0の場合（E_PAR）
-		$IF MPF.BLKSZ[mpfid] == 0$
+$		// blkszが0以下の場合（E_PAR）
+		$IF MPF.BLKSZ[mpfid] <= 0$
 			$ERROR MPF.TEXT_LINE[mpfid]$E_PAR: $FORMAT(_("illegal %1% `%2%\' of `%3%\' in %4%"), "blksz", MPF.BLKSZ[mpfid], mpfid, "CRE_MPF")$$END$
 		$END$
 
@@ -661,7 +714,7 @@ $		// 固定長メモリプール管理領域
 $	// 固定長メモリプール初期化ブロックの生成
 	const MPFINIB _kernel_mpfinib_table[TNUM_SMPFID] = {$NL$
 	$JOINEACH mpfid MPF.ID_LIST ",\n"$
-		$TAB${ ($MPF.MPFATR[mpfid]$), ($MPF.BLKCNT[mpfid]$), ROUND_MPF_T($MPF.BLKSZ[mpfid]$), $IF EQ(MPF.MPF[mpfid],"NULL")$(_kernel_mpf_$mpfid$)$ELSE$($MPF.MPF[mpfid]$)$END$, (_kernel_mpfmb_$mpfid$) }
+		$TAB${ ($MPF.MPFATR[mpfid]$), ($MPF.BLKCNT[mpfid]$), ROUND_MPF_T($MPF.BLKSZ[mpfid]$), $IF EQ(MPF.MPF[mpfid],"NULL")$(_kernel_mpf_$mpfid$)$ELSE$(void *)($MPF.MPF[mpfid]$)$END$, (_kernel_mpfmb_$mpfid$) }
 	$END$$NL$
 	};$NL$
 $ELSE$
@@ -676,7 +729,7 @@ $ELSE$
 $END$$NL$
 
 $ 固定長メモリプール管理ブロックの生成
-$IF num_mpfid$
+$IF num_mpfid > 0$
 	MPFCB _kernel_mpfcb_table[TNUM_MPFID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(MPFCB, _kernel_mpfcb_table);$NL$
@@ -738,8 +791,8 @@ $ELSE$
 	TOPPERS_EMPTY_LABEL(CYCINIB, _kernel_acycinib_table);$NL$
 $END$$NL$
 
-$ 周期ハンドラ管理ブロック
-$IF num_cycid$
+$ 周期ハンドラ管理ブロックの生成
+$IF num_cycid > 0$
 	CYCCB _kernel_cyccb_table[TNUM_CYCID];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(CYCCB, _kernel_cyccb_table);$NL$
@@ -786,11 +839,11 @@ $ELSE$
 	TOPPERS_EMPTY_LABEL(ALMINIB, _kernel_aalminib_table);$NL$
 $END$$NL$
 
-$ アラームハンドラ管理ブロック
-$IF num_almid$
+$ アラームハンドラ管理ブロックの生成
+$IF num_almid > 0$
 	ALMCB _kernel_almcb_table[TNUM_ALMID];$NL$
 $ELSE$
-	TOPPERS_EMPTY_LABEL(const ALMINIB, _kernel_alminib_table);$NL$
+	TOPPERS_EMPTY_LABEL(ALMCB, _kernel_almcb_table);$NL$
 $END$$NL$
 
 $ 
@@ -1023,13 +1076,13 @@ $	// ISR用の割込みハンドラ
 	_kernel_inthdr_$intno$(void)$NL$
 	{$NL$
 	$TAB$i_begin_int($intno$);$NL$
-	$TAB$call_isr($ISR_QUEUE_HEADER[intno]$);$NL$
+	$TAB$_kernel_call_isr($ISR_QUEUE_HEADER[intno]$);$NL$
 	$TAB$i_end_int($intno$);$NL$
 	}$NL$
 	$NL$
 $END$
 
-$ 静的に生成された割込みサービスルーチンの数
+$ 割込みサービスルーチンの数
 #define TNUM_SISR	$LENGTH(ISR.ORDER_LIST)$$NL$
 #define TNUM_ISR	$LENGTH(ISR.ORDER_LIST) + num_aisrid$$NL$
 $NL$
@@ -1061,7 +1114,7 @@ $END$
 $NL$
 
 $ 割込みサービスルーチン管理ブロックの生成
-$IF LENGTH(ISR.ORDER_LIST) || num_aisrid > 0$
+$IF num_isr > 0$
 	ISRCB _kernel_isrcb_table[TNUM_ISR];$NL$
 $ELSE$
 	TOPPERS_EMPTY_LABEL(ISRCB, _kernel_isrcb_table);$NL$
@@ -1102,7 +1155,7 @@ $END$$NL$
 $END$
 
 $ 割込み要求ラインの初期化に必要な情報
-$IF !OMIT_INITIALIZE_INTERRUPT || ALT(USE_INHINTB_TABLE,0)$
+$IF !OMIT_INITIALIZE_INTERRUPT || ALT(USE_INTINIB_TABLE,0)$
 
 $ 割込み要求ライン数
 #define TNUM_INTNO	$LENGTH(INT.ORDER_LIST)$$NL$
@@ -1206,6 +1259,13 @@ $	// 静的API「DEF_ICS」が複数ある（E_OBJ）
 		$ERROR$E_OBJ: $FORMAT(_("too many %1%"), "DEF_ICS")$$END$
 	$END$
 
+$	// istkszが0以下か，ターゲット定義の最小値（TARGET_MIN_ISTKSZ）よりも
+$	// 小さい場合（E_PAR）
+	$IF ICS.ISTKSZ[1] <= 0 || (TARGET_MIN_ISTKSZ
+									&& ICS.ISTKSZ[1] < TARGET_MIN_ISTKSZ)$
+		$ERROR ICS.TEXT_LINE[1]$E_PAR: $FORMAT(_("%1% `%2%\' in %3% is too small"), "istksz", ICS.ISTKSZ[1], "DEF_ICS")$$END$
+	$END$
+
 $ 	// istkszがスタック領域のサイズとして正しくない場合（E_PAR）
 	$IF !EQ(ICS.ISTK[1], "NULL") && CHECK_STKSZ_ALIGN
 							&& (ICS.ISTKSZ[1] & (CHECK_STKSZ_ALIGN - 1))$
@@ -1219,7 +1279,7 @@ $		// スタック領域の自動割付け
 		#define TOPPERS_ISTK		_kernel_istack$NL$
 	$ELSE$
 		#define TOPPERS_ISTKSZ		($ICS.ISTKSZ[1]$)$NL$
-		#define TOPPERS_ISTK		($ICS.ISTK[1]$)$NL$
+		#define TOPPERS_ISTK		(void *)($ICS.ISTK[1]$)$NL$
 	$END$
 $END$
 $NL$
@@ -1246,15 +1306,19 @@ $	// DEF_KMMがない場合のデフォルト値の設定
 	#define TOPPERS_KMMSZ		0$NL$
 	#define TOPPERS_KMM			NULL$NL$
 $ELSE$
-
 $	// 静的API「DEF_KMM」が複数ある（E_OBJ）
 	$IF LENGTH(KMM.ORDER_LIST) > 1$
 		$ERROR$E_OBJ: $FORMAT(_("too many %1%"), "DEF_KMM")$$END$
 	$END$
 
+$	// kmmszが0以下の場合（E_PAR）
+	$IF KMM.KMMSZ[1] <= 0$
+		$ERROR KMM.TEXT_LINE[1]$E_PAR: $FORMAT(_("%1% `%2%\' is zero in %3%"), "kmmsz", KMM.KMMSZ[1], "DEF_KMM")$$END$
+	$END$
+
 $ 	// kmmszがカーネルが割り付けるメモリ領域のサイズとして正しくない場合（E_PAR）
 	$IF !EQ(KMM.KMM[1], "NULL") && CHECK_MB_ALIGN
-							&& (KMM.MBSZ[1] & (CHECK_MB_ALIGN - 1))$
+							&& (KMM.KMMSZ[1] & (CHECK_MB_ALIGN - 1))$
 		$ERROR KMM.TEXT_LINE[1]$E_PAR: $FORMAT(_("%1% `%2%\' in %3% is not aligned"), "kmmsz", KMM.KMMSZ[1], "DEF_KMM")$$END$
 	$END$
 
@@ -1265,7 +1329,7 @@ $		// カーネルが割り付けるメモリ領域の自動割付け
 		#define TOPPERS_KMM			_kernel_memory$NL$
 	$ELSE$
 		#define TOPPERS_KMMSZ		($KMM.KMMSZ[1]$)$NL$
-		#define TOPPERS_KMM			($KMM.KMM[1]$)$NL$
+		#define TOPPERS_KMM			(void *)($KMM.KMM[1]$)$NL$
 	$END$
 $END$
 $NL$
@@ -1296,16 +1360,16 @@ void$NL$
 _kernel_initialize_object(void)$NL$
 {$NL$
 $TAB$_kernel_initialize_task();$NL$
-$IF num_semid$	_kernel_initialize_semaphore();$NL$$END$
-$IF num_flgid$	_kernel_initialize_eventflag();$NL$$END$
-$IF num_dtqid$	_kernel_initialize_dataqueue();$NL$$END$
-$IF num_pdqid$	_kernel_initialize_pridataq();$NL$$END$
-$IF num_mbxid$	_kernel_initialize_mailbox();$NL$$END$
-$IF num_mpfid$	_kernel_initialize_mempfix();$NL$$END$
-$IF num_cycid$	_kernel_initialize_cyclic();$NL$$END$
-$IF num_almid$	_kernel_initialize_alarm();$NL$$END$
+$IF num_semid$$TAB$_kernel_initialize_semaphore();$NL$$END$
+$IF num_flgid$$TAB$_kernel_initialize_eventflag();$NL$$END$
+$IF num_dtqid$$TAB$_kernel_initialize_dataqueue();$NL$$END$
+$IF num_pdqid$$TAB$_kernel_initialize_pridataq();$NL$$END$
+$IF num_mbxid$$TAB$_kernel_initialize_mailbox();$NL$$END$
+$IF num_mpfid$$TAB$_kernel_initialize_mempfix();$NL$$END$
+$IF num_cycid$$TAB$_kernel_initialize_cyclic();$NL$$END$
+$IF num_almid$$TAB$_kernel_initialize_alarm();$NL$$END$
 $TAB$_kernel_initialize_interrupt();$NL$
-$IF num_isr$	_kernel_initialize_isr();$NL$$END$
+$IF num_isr$$TAB$_kernel_initialize_isr();$NL$$END$
 $TAB$_kernel_initialize_exception();$NL$
 }$NL$
 $NL$

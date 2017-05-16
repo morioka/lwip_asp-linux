@@ -51,14 +51,6 @@
 /*
  *  トレースログマクロのデフォルト定義
  */
-#ifndef LOG_DEF_TEX_ENTER
-#define LOG_DEF_TEX_ENTER(tskid, pk_dtex)
-#endif /* LOG_DEF_TEX_ENTER */
-
-#ifndef LOG_DEF_TEX_LEAVE
-#define LOG_DEF_TEX_LEAVE(ercd)
-#endif /* LOG_DEF_TEX_LEAVE */
-
 #ifndef LOG_RAS_TEX_ENTER
 #define LOG_RAS_TEX_ENTER(tskid, rasptn)
 #endif /* LOG_RAS_TEX_ENTER */
@@ -108,63 +100,6 @@
 #endif /* LOG_REF_TEX_LEAVE */
 
 /*
- *  タスク例外処理ルーチンの定義
- */
-#ifdef TOPPERS_def_tex
-
-ER_UINT
-def_tex(ID tskid, const T_DTEX *pk_dtex)
-{
-	TCB		*p_tcb;
-	TINIB	*p_tinib;
-	ER		ercd;
-
-	LOG_DEF_TEX_ENTER(tskid, pk_dtex);
-	CHECK_TSKCTX_UNL();
-	CHECK_TSKID_SELF(tskid);
-	CHECK_RSATR(pk_dtex->texatr, TA_NULL);
-	if (pk_dtex->texrtn != NULL) {
-		CHECK_ALIGN_FUNC(pk_dtex->texrtn);
-		CHECK_NONNULL_FUNC(pk_dtex->texrtn);
-	}
-	p_tcb = get_tcb_self(tskid);
-	p_tinib = (TINIB *)(p_tcb->p_tinib);
-
-	t_lock_cpu();
-	if (TSKID(p_tcb) <= tmax_stskid) {
-		ercd = E_OBJ;
-	}
-	else if (pk_dtex->texrtn != NULL) {
-		if (p_tinib->texrtn != NULL) {
-			ercd = E_OBJ;
-		}
-		else {
-			p_tinib->texatr = pk_dtex->texatr;
-			p_tinib->texrtn = pk_dtex->texrtn;
-			ercd = E_OK;
-		}
-	}
-	else {
-		if (p_tinib->texrtn != NULL) {
-			p_tinib->texrtn = NULL;
-			p_tcb->enatex = false;
-			p_tcb->texptn = 0U;
-			ercd = E_OK;
-		}
-		else {
-			ercd = E_OBJ;
-		}
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_DEF_TEX_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_def_tex */
-
-/*
  *  タスク例外処理の要求
  */
 #ifdef TOPPERS_ras_tex
@@ -182,10 +117,7 @@ ras_tex(ID tskid, TEXPTN rasptn)
 	p_tcb = get_tcb_self(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
+	if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
 		ercd = E_OBJ;
 	}
 	else {
@@ -222,10 +154,7 @@ iras_tex(ID tskid, TEXPTN rasptn)
 	p_tcb = get_tcb(tskid);
 
 	i_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
+	if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
 		ercd = E_OBJ;
 	}
 	else {
@@ -342,10 +271,7 @@ ref_tex(ID tskid, T_RTEX *pk_rtex)
 	p_tcb = get_tcb_self(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
+	if (TSTAT_DORMANT(p_tcb->tstat) || p_tcb->p_tinib->texrtn == NULL) {
 		ercd = E_OBJ;
 	}
 	else {

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: mempfix.h 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: mempfix.h 2228 2011-08-14 00:35:44Z ertl-hiro $
  */
 
 /*
@@ -47,7 +47,7 @@
 #ifndef TOPPERS_MEMPFIX_H
 #define TOPPERS_MEMPFIX_H
 
-#include <queue.h>
+#include "wait.h"
 
 /*
  *  固定長メモリブロック管理ブロック
@@ -104,21 +104,14 @@ typedef struct fixed_memorypool_waiting_information {
 } WINFO_MPF;
 
 /*
- *  使用していない固定長メモリプール管理ブロックのリスト
- */
-extern QUEUE	free_mpfcb;
-
-/*
  *  固定長メモリプールIDの最大値（kernel_cfg.c）
  */
 extern const ID	tmax_mpfid;
-extern const ID	tmax_smpfid;
 
 /*
  *  固定長メモリプール初期化ブロックのエリア（kernel_cfg.c）
  */
 extern const MPFINIB	mpfinib_table[];
-extern MPFINIB			ampfinib_table[];
 
 /*
  *  固定長メモリプール管理ブロックのエリア（kernel_cfg.c）

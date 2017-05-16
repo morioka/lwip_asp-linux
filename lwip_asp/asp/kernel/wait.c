@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: wait.c 1841 2010-07-10 17:37:34Z ertl-hiro $
+ *  @(#) $Id: wait.c 2587 2014-01-02 01:54:03Z ertl-hiro $
  */
 
 /*
@@ -205,7 +205,7 @@ init_wait_queue(QUEUE *p_wait_queue)
 		p_tcb->p_winfo->wercd = E_DLT;
 		if (make_non_wait(p_tcb)) {
 			dspreq = true;
-		};
+		}
 	}
 	return(dspreq);
 }

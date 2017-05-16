@@ -99,7 +99,7 @@ call_almhdr
 # interrupt.c
 free_isrcb
 initialize_isr
-inthdr_call_isr
+call_isr
 initialize_interrupt
 
 # exception.c
@@ -126,12 +126,12 @@ flginib_table
 aflginib_table
 flgcb_table
 tmax_dtqid
-tmax_adtqid
+tmax_sdtqid
 dtqinib_table
-sdtqinib_table
+adtqinib_table
 dtqcb_table
 tmax_pdqid
-tmax_apdqid
+tmax_spdqid
 pdqinib_table
 apdqinib_table
 pdqcb_table

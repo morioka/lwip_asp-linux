@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2009 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -42,7 +42,9 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <map>
 #include <sstream>
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 #include "toppers/workaround.hpp"
@@ -55,6 +57,13 @@
 #include "toppers/itronx/static_api.hpp"
 #include "toppers/itronx/factory.hpp"
 #include "toppers/itronx/cfg1_out.hpp"
+#include "toppers/oil/preprocess.hpp"
+#include "toppers/oil/factory.hpp"
+#include "toppers/oil/cfg1_out.hpp"
+#ifdef  HAS_CFG_XML
+#include "toppers/xml/factory.hpp"
+#include "toppers/xml/cfg1_out.hpp"
+#endif
 #include <boost/utility.hpp>
 #include <boost/format.hpp>
 
@@ -74,7 +83,5 @@ std::tr1::int64_t cfg_timestamp();
 bool read_cfg_file( std::map< std::string, toppers::itronx::static_api::info > const info_map,
                     std::string& cfg1_list, std::string& includes,
                     std::vector< toppers::itronx::static_api >& static_api_array );
-
-void assign_id( toppers::itronx::cfg1_out::static_api_map& api_map );
 
 #endif  // ! CFG_HPP_

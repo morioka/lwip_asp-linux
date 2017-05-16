@@ -1,6 +1,7 @@
 #!/bin/sh
 
 makefile_config="Makefile.config"
+with_xml=0
 
 # コマンドライン引数の処理
 for arg in "$@"
@@ -11,6 +12,7 @@ do
 	case $name in
 		--with-headers)		include_path=$value ;;
 		--with-libraries)	library_path=$value ;;
+		--with-xml)			with_xml=1 ;;
 		--help)				echo "configure options:"
 							echo "--help"
 							echo "	display this information"
@@ -18,6 +20,8 @@ do
 							echo "	specify the directory of Boost headers"
 							echo "--with-libraries=<dir>"
 							echo "	specify the directory of Boost libraries"
+							echo "--with-xml"
+							echo "  support for XML"
 							exit
 							;;
 	esac
@@ -41,7 +45,7 @@ do
 done
 
 # Boost C++ Librariesのライブラリファイルがあるディレクトリをサーチ
-for dir in $library_path "/usr/local/lib" "/opt/local/lib" "/opt/lib" "/usr/lib" "/lib" "/mingw/lib"
+for dir in $library_path "/usr/local/lib" "/opt/local/lib" "/opt/lib" "/usr/lib" "/lib" "/mingw/lib" "/usr/lib/i386-linux-gnu" "/usr/lib/x86_64-linux-gnu"
 do
 	ls $dir/libboost* 2> /dev/null > /dev/null
 	if test $? -eq 0
@@ -56,11 +60,11 @@ done
 rm Makefile.config 2> /dev/null
 
 # Boost C++ Librariesのバージョンを調べる
-boost_version=`echo "#include <boost/version.hpp>
-echo BOOST_VERSION" | g++ -E -I$include_path -L$library_path - | sh`
+#boost_version=`echo "#include <boost/version.hpp>
+#echo BOOST_VERSION" | g++ -E -I$include_path -L$library_path - | sh`
 
-boost_lib_version=`echo "#include <boost/version.hpp>
-echo BOOST_LIB_VERSION" | g++ -E -I$include_path -L$library_path - | sh`
+#boost_lib_version=`echo "#include <boost/version.hpp>
+#echo BOOST_LIB_VERSION" | g++ -E -I$include_path -L$library_path - | sh`
 
 # ライブラリファイルの添字を調べる
 # 環境によって、-gcc-mt-s, -mt-s, -gcc42-mt-sなど、添字が異なるため
@@ -75,8 +79,14 @@ echo "LIBBOOST_SUFFIX=$libboost_suffix" >> $makefile_config
 # 各種変数を出力
 echo BOOST_VERSION=$boost_lib_version >> $makefile_config
 echo BOOST_DIR=$include_path >> $makefile_config
+echo XERCES_DIR=$include_path >> $makefile_config
 echo LIBBOOST_DIR=$library_path >> $makefile_config
+echo LIBXERCES_DIR=$library_path >> $makefile_config
 echo OPTIONS=$options >> $makefile_config
+if test $with_xml -eq 1
+then
+	echo HAS_CFG_XML=1 >> $makefile_config
+fi
 
 # 生成結果を表示
 cat Makefile.config

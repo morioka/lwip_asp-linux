@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: mailbox.c 1970 2010-11-20 11:27:06Z ertl-hiro $
+ *  $Id: mailbox.c 2634 2014-04-13 12:07:55Z ertl-hiro $
  */
 
 /*
@@ -146,13 +146,15 @@ initialize_mailbox(void)
 	MBXCB	*p_mbxcb;
 	MBXINIB	*p_mbxinib;
 
-	for (p_mbxcb = mbxcb_table, i = 0; i < tnum_smbx; p_mbxcb++, i++) {
+	for (i = 0; i < tnum_smbx; i++) {
+		p_mbxcb = &(mbxcb_table[i]);
 		queue_initialize(&(p_mbxcb->wait_queue));
 		p_mbxcb->p_mbxinib = &(mbxinib_table[i]);
 		p_mbxcb->pk_head = NULL;
 	}
 	queue_initialize(&free_mbxcb);
-	for (j = 0; i < tnum_mbx; p_mbxcb++, i++, j++) {
+	for (j = 0; i < tnum_mbx; i++, j++) {
+		p_mbxcb = &(mbxcb_table[i]);
 		p_mbxinib = &(ambxinib_table[j]);
 		p_mbxinib->mbxatr = TA_NOEXS;
 		p_mbxcb->p_mbxinib = ((const MBXINIB *) p_mbxinib);
@@ -165,7 +167,7 @@ initialize_mailbox(void)
 /*
  *  メッセージ優先度の取出し
  */
-#define	MSGPRI(pk_msg)	(((T_MSG_PRI *) pk_msg)->msgpri)
+#define	MSGPRI(pk_msg)	(((T_MSG_PRI *)(pk_msg))->msgpri)
 
 /*
  *  優先度順メッセージキューへの挿入
@@ -204,7 +206,7 @@ acre_mbx(const T_CMBX *pk_cmbx)
 	CHECK_NOSPT(pk_cmbx->mprihd == NULL);
 
 	t_lock_cpu();
-	if (queue_empty(&free_mbxcb)) {
+	if (tnum_mbx == 0 || queue_empty(&free_mbxcb)) {
 		ercd = E_NOID;
 	}
 	else {
@@ -286,13 +288,15 @@ snd_mbx(ID mbxid, T_MSG *pk_msg)
 	CHECK_TSKCTX_UNL();
 	CHECK_MBXID(mbxid);
 	p_mbxcb = get_mbxcb(mbxid);
-	CHECK_PAR((p_mbxcb->p_mbxinib->mbxatr & TA_MPRI) == 0U
-				|| (TMIN_MPRI <= MSGPRI(pk_msg)
-					&& MSGPRI(pk_msg) <= p_mbxcb->p_mbxinib->maxmpri));
 
 	t_lock_cpu();
 	if (p_mbxcb->p_mbxinib->mbxatr == TA_NOEXS) {
 		ercd = E_NOEXS;
+	}
+	else if (!((p_mbxcb->p_mbxinib->mbxatr & TA_MPRI) == 0U
+				|| (TMIN_MPRI <= MSGPRI(pk_msg)
+					&& MSGPRI(pk_msg) <= p_mbxcb->p_mbxinib->maxmpri))) {
+		ercd = E_PAR;
 	}
 	else if (!queue_empty(&(p_mbxcb->wait_queue))) {
 		p_tcb = (TCB *) queue_delete_next(&(p_mbxcb->wait_queue));

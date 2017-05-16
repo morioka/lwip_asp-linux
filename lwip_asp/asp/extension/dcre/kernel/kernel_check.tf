@@ -36,9 +36,27 @@ $   に対する適合性も含めて，いかなる保証も行わない．ま�
 $   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 $   の責任を負わない．
 $ 
-$   @(#) $Id: kernel_check.tf 2062 2011-04-10 16:27:41Z ertl-hiro $
+$   @(#) $Id: kernel_check.tf 2583 2013-12-31 06:07:08Z ertl-hiro $
 $  
 $ =====================================================================
+
+$
+$  データセクションのLMAからVMAへのコピー
+$
+$FOREACH lma LMA.ORDER_LIST$
+	$start_data = SYMBOL(LMA.START_DATA[lma])$
+	$end_data = SYMBOL(LMA.END_DATA[lma])$
+	$start_idata = SYMBOL(LMA.START_IDATA[lma])$
+	$IF !LENGTH(start_data)$
+		$ERROR$$FORMAT(_("symbol '%1%' not found"), LMA.START_DATA[lma])$$END$
+	$ELIF !LENGTH(end_data)$
+		$ERROR$$FORMAT(_("symbol '%1%' not found"), LMA.END_DATA[lma])$$END$
+	$ELIF !LENGTH(start_idata)$
+		$ERROR$$FORMAT(_("symbol '%1%' not found"), LMA.START_IDATA[lma])$$END$
+	$ELSE$
+		$BCOPY(start_idata, start_data, end_data - start_data)$
+	$END$
+$END$
 
 $ 
 $  関数の先頭番地のチェック
@@ -70,7 +88,7 @@ $	// タスクとタスク例外処理ルーチンの先頭番地のチェック
 $	// 周期ハンドラの先頭番地のチェック
 	$cycinib = SYMBOL("_kernel_cycinib_table")$
 	$FOREACH cycid CYC.ID_LIST$
-		$cychdr = PEEK(cycinib + offsetof_CYCINIB_cychdr, 4)$
+		$cychdr = PEEK(cycinib + offsetof_CYCINIB_cychdr, sizeof_FP)$
 		$IF CHECK_FUNC_ALIGN && (cychdr & (CHECK_FUNC_ALIGN - 1)) != 0$
 			$ERROR CYC.TEXT_LINE[cycid]$E_PAR: 
 				$FORMAT(_("%1% `%2%\' of `%3%\' in %4% is not aligned"),
@@ -87,7 +105,7 @@ $	// 周期ハンドラの先頭番地のチェック
 $	// アラームハンドラの先頭番地のチェック
 	$alminib = SYMBOL("_kernel_alminib_table")$
 	$FOREACH almid ALM.ID_LIST$
-		$almhdr = PEEK(alminib + offsetof_ALMINIB_almhdr, 4)$
+		$almhdr = PEEK(alminib + offsetof_ALMINIB_almhdr, sizeof_FP)$
 		$IF CHECK_FUNC_ALIGN && (almhdr & (CHECK_FUNC_ALIGN - 1)) != 0$
 			$ERROR ALM.TEXT_LINE[almid]$E_PAR: 
 				$FORMAT(_("%1% `%2%\' of `%3%\' in %4% is not aligned"),
@@ -104,7 +122,7 @@ $	// アラームハンドラの先頭番地のチェック
 $	// 割込みサービスルーチンの先頭番地のチェック
 	$isrinib = SYMBOL("_kernel_sisrinib_table")$
 	$FOREACH order ISR.ORDER_LIST$
-		$isr = PEEK(isrinib + offsetof_ISRINIB_isr, 4)$
+		$isr = PEEK(isrinib + offsetof_ISRINIB_isr, sizeof_FP)$
 		$IF CHECK_FUNC_ALIGN && (isr & (CHECK_FUNC_ALIGN - 1)) != 0$
 			$ERROR ISR.TEXT_LINE[order]$E_PAR: 
 				$FORMAT(_("%1% `%2%\' in %4% is not aligned"),
@@ -147,12 +165,12 @@ $	// タスクのスタック領域の先頭番地のチェック
 $	// 非タスクコンテキスト用のスタック領域の先頭番地のチェック
 	$istk = PEEK(SYMBOL("_kernel_istk"), sizeof_void_ptr)$
 	$IF CHECK_STACK_ALIGN && (istk & (CHECK_STACK_ALIGN - 1)) != 0$
-		$ERROR ICE.TEXT_LINE[1]$E_PAR: 
+		$ERROR ICS.TEXT_LINE[1]$E_PAR: 
 			$FORMAT(_("%1% `%2%\' in %3% is not aligned"),
 			"istk", ICS.ISTK[1], "DEF_ICS")$$END$
 	$END$
 	$IF CHECK_STACK_NONNULL && istk == 0$
-		$ERROR ICE.TEXT_LINE[1]$E_PAR: 
+		$ERROR ICS.TEXT_LINE[1]$E_PAR: 
 			$FORMAT(_("%1% `%2%\' in %3% is null"),
 			"istk", ICS.ISTK[1], "DEF_ICS")$$END$
 	$END$

@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Advanced Standard Profile Kernel
  * 
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: task_refer.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  $Id: task_refer.c 2645 2014-04-19 21:26:29Z ertl-hiro $
  */
 
 /*
@@ -83,11 +83,11 @@ ref_tsk(ID tskid, T_RTSK *pk_rtsk)
 	p_tcb = get_tcb_self(tskid);
 
 	t_lock_cpu();
-	tstat = p_tcb->tstat;
 	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
 	else {
+		tstat = p_tcb->tstat;
 		if (TSTAT_DORMANT(tstat)) {
 			/*
 	 		 *  対象タスクが休止状態の場合

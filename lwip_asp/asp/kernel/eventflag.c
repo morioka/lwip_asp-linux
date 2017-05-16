@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2011 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: eventflag.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: eventflag.c 2133 2011-06-26 03:14:51Z ertl-hiro $
  */
 
 /*
@@ -53,22 +53,6 @@
 /*
  *  トレースログマクロのデフォルト定義
  */
-#ifndef LOG_ACRE_FLG_ENTER
-#define LOG_ACRE_FLG_ENTER(pk_cflg)
-#endif /* LOG_ACRE_FLG_ENTER */
-
-#ifndef LOG_ACRE_FLG_LEAVE
-#define LOG_ACRE_FLG_LEAVE(ercd)
-#endif /* LOG_ACRE_FLG_LEAVE */
-
-#ifndef LOG_DEL_FLG_ENTER
-#define LOG_DEL_FLG_ENTER(flgid)
-#endif /* LOG_DEL_FLG_ENTER */
-
-#ifndef LOG_DEL_FLG_LEAVE
-#define LOG_DEL_FLG_LEAVE(ercd)
-#endif /* LOG_DEL_FLG_LEAVE */
-
 #ifndef LOG_SET_FLG_ENTER
 #define LOG_SET_FLG_ENTER(flgid, setptn)
 #endif /* LOG_SET_FLG_ENTER */
@@ -137,7 +121,6 @@
  *  イベントフラグの数
  */
 #define tnum_flg	((uint_t)(tmax_flgid - TMIN_FLGID + 1))
-#define tnum_sflg	((uint_t)(tmax_sflgid - TMIN_FLGID + 1))
 
 /*
  *  イベントフラグIDからイベントフラグ管理ブロックを取り出すためのマクロ
@@ -145,121 +128,26 @@
 #define INDEX_FLG(flgid)	((uint_t)((flgid) - TMIN_FLGID))
 #define get_flgcb(flgid)	(&(flgcb_table[INDEX_FLG(flgid)]))
 
-#ifdef TOPPERS_flgini
-
-/*
- *  使用していないイベントフラグ管理ブロックのリスト
- */
-QUEUE	free_flgcb;
-
 /*
  *  イベントフラグ機能の初期化
  */
+#ifdef TOPPERS_flgini
+
 void
 initialize_eventflag(void)
 {
-	uint_t	i, j;
+	uint_t	i;
 	FLGCB	*p_flgcb;
-	FLGINIB	*p_flginib;
 
-	for (p_flgcb = flgcb_table, i = 0; i < tnum_sflg; p_flgcb++, i++) {
+	for (i = 0; i < tnum_flg; i++) {
+		p_flgcb = &(flgcb_table[i]);
 		queue_initialize(&(p_flgcb->wait_queue));
 		p_flgcb->p_flginib = &(flginib_table[i]);
 		p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
 	}
-	queue_initialize(&free_flgcb);
-	for (j = 0; i < tnum_flg; p_flgcb++, i++, j++) {
-		p_flginib = &(aflginib_table[j]);
-		p_flginib->flgatr = TA_NOEXS;
-		p_flgcb->p_flginib = ((const FLGINIB *) p_flginib);
-		queue_insert_prev(&free_flgcb, &(p_flgcb->wait_queue));
-	}
 }
 
 #endif /* TOPPERS_flgini */
-
-/*
- *  イベントフラグの生成
- */
-#ifdef TOPPERS_acre_flg
-
-ER_UINT
-acre_flg(const T_CFLG *pk_cflg)
-{
-	FLGCB	*p_flgcb;
-	FLGINIB	*p_flginib;
-	ER		ercd;
-
-	LOG_ACRE_FLG_ENTER(pk_cflg);
-	CHECK_TSKCTX_UNL();
-	CHECK_RSATR(pk_cflg->flgatr, TA_TPRI|TA_WMUL|TA_CLR);
-
-	t_lock_cpu();
-	if (queue_empty(&free_flgcb)) {
-		ercd = E_NOID;
-	}
-	else {
-		p_flgcb = ((FLGCB *) queue_delete_next(&free_flgcb));
-		p_flginib = (FLGINIB *)(p_flgcb->p_flginib);
-		p_flginib->flgatr = pk_cflg->flgatr;
-		p_flginib->iflgptn = pk_cflg->iflgptn;
-
-		queue_initialize(&(p_flgcb->wait_queue));
-		p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
-		ercd = FLGID(p_flgcb);
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_ACRE_FLG_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_acre_flg */
-
-/*
- *  イベントフラグの削除
- */
-#ifdef TOPPERS_del_flg
-
-ER
-del_flg(ID flgid)
-{
-	FLGCB	*p_flgcb;
-	FLGINIB	*p_flginib;
-	bool_t	dspreq;
-	ER		ercd;
-
-	LOG_DEL_FLG_ENTER(flgid);
-	CHECK_TSKCTX_UNL();
-	CHECK_FLGID(flgid);
-	p_flgcb = get_flgcb(flgid);
-
-	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (FLGID(p_flgcb) > tmax_sflgid) {
-		dspreq = init_wait_queue(&(p_flgcb->wait_queue));
-		p_flginib = (FLGINIB *)(p_flgcb->p_flginib);
-		p_flginib->flgatr = TA_NOEXS;
-		queue_insert_prev(&free_flgcb, &(p_flgcb->wait_queue));
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
-	}
-	else {
-		ercd = E_OBJ;
-	}
-	t_unlock_cpu();
-
-  error_exit:
-	LOG_DEL_FLG_LEAVE(ercd);
-	return(ercd);
-}
-
-#endif /* TOPPERS_del_flg */
 
 /*
  *  イベントフラグ待ち解除条件のチェック
@@ -303,32 +191,27 @@ set_flg(ID flgid, FLGPTN setptn)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else {
-		p_flgcb->flgptn |= setptn;
-		p_queue = p_flgcb->wait_queue.p_next;
-		while (p_queue != &(p_flgcb->wait_queue)) {
-			p_tcb = (TCB *) p_queue;
-			p_queue = p_queue->p_next;
-			p_winfo_flg = (WINFO_FLG *)(p_tcb->p_winfo);
-			if (check_flg_cond(p_flgcb, p_winfo_flg->waiptn,
+	p_flgcb->flgptn |= setptn;
+	p_queue = p_flgcb->wait_queue.p_next;
+	while (p_queue != &(p_flgcb->wait_queue)) {
+		p_tcb = (TCB *) p_queue;
+		p_queue = p_queue->p_next;
+		p_winfo_flg = (WINFO_FLG *)(p_tcb->p_winfo);
+		if (check_flg_cond(p_flgcb, p_winfo_flg->waiptn,
 							p_winfo_flg->wfmode, &(p_winfo_flg->flgptn))) {
-				queue_delete(&(p_tcb->task_queue));
-				if (wait_complete(p_tcb)) {
-					dspreq = true;
-				}
-				if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
-					break;
-				}
+			queue_delete(&(p_tcb->task_queue));
+			if (wait_complete(p_tcb)) {
+				dspreq = true;
+			}
+			if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
+				break;
 			}
 		}
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
 	}
+	if (dspreq) {
+		dispatch();
+	}
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -358,29 +241,24 @@ iset_flg(ID flgid, FLGPTN setptn)
 	p_flgcb = get_flgcb(flgid);
 
 	i_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else {
-		p_flgcb->flgptn |= setptn;
-		p_queue = p_flgcb->wait_queue.p_next;
-		while (p_queue != &(p_flgcb->wait_queue)) {
-			p_tcb = (TCB *) p_queue;
-			p_queue = p_queue->p_next;
-			p_winfo_flg = (WINFO_FLG *)(p_tcb->p_winfo);
-			if (check_flg_cond(p_flgcb, p_winfo_flg->waiptn,
+	p_flgcb->flgptn |= setptn;
+	p_queue = p_flgcb->wait_queue.p_next;
+	while (p_queue != &(p_flgcb->wait_queue)) {
+		p_tcb = (TCB *) p_queue;
+		p_queue = p_queue->p_next;
+		p_winfo_flg = (WINFO_FLG *)(p_tcb->p_winfo);
+		if (check_flg_cond(p_flgcb, p_winfo_flg->waiptn,
 							p_winfo_flg->wfmode, &(p_winfo_flg->flgptn))) {
-				queue_delete(&(p_tcb->task_queue));
-				if (wait_complete(p_tcb)) {
-					reqflg = true;
-				}
-				if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
-					break;
-				}
+			queue_delete(&(p_tcb->task_queue));
+			if (wait_complete(p_tcb)) {
+				reqflg = true;
+			}
+			if ((p_flgcb->p_flginib->flgatr & TA_CLR) != 0U) {
+				break;
 			}
 		}
-		ercd = E_OK;
 	}
+	ercd = E_OK;
 	i_unlock_cpu();
 
   error_exit:
@@ -407,13 +285,8 @@ clr_flg(ID flgid, FLGPTN clrptn)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else {
-		p_flgcb->flgptn &= clrptn; 
-		ercd = E_OK;
-	}
+	p_flgcb->flgptn &= clrptn; 
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -443,10 +316,7 @@ wai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
+	if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
 					&& !queue_empty(&(p_flgcb->wait_queue))) {
 		ercd = E_ILUSE;
 	}
@@ -492,10 +362,7 @@ pol_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
+	if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
 					&& !queue_empty(&(p_flgcb->wait_queue))) {
 		ercd = E_ILUSE;
 	}
@@ -536,10 +403,7 @@ twai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn, TMO tmout)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
+	if ((p_flgcb->p_flginib->flgatr & TA_WMUL) == 0U
 					&& !queue_empty(&(p_flgcb->wait_queue))) {
 		ercd = E_ILUSE;
 	}
@@ -588,17 +452,12 @@ ini_flg(ID flgid)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
+	dspreq = init_wait_queue(&(p_flgcb->wait_queue));
+	p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
+	if (dspreq) {
+		dispatch();
 	}
-	else {
-		dspreq = init_wait_queue(&(p_flgcb->wait_queue));
-		p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
-		if (dspreq) {
-			dispatch();
-		}
-		ercd = E_OK;
-	}
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -625,14 +484,9 @@ ref_flg(ID flgid, T_RFLG *pk_rflg)
 	p_flgcb = get_flgcb(flgid);
 
 	t_lock_cpu();
-	if (p_flgcb->p_flginib->flgatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else {
-		pk_rflg->wtskid = wait_tskid(&(p_flgcb->wait_queue));
-		pk_rflg->flgptn = p_flgcb->flgptn;
-		ercd = E_OK;
-	}
+	pk_rflg->wtskid = wait_tskid(&(p_flgcb->wait_queue));
+	pk_rflg->flgptn = p_flgcb->flgptn;
+	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:

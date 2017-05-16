@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 2018 2010-12-31 13:43:05Z ertl-hiro $
+ *  $Id: task.h 2146 2011-07-03 23:40:01Z ertl-hiro $
  */
 
 /*
@@ -246,7 +246,7 @@ typedef struct task_control_block {
 #else /* defined(UINT8_MAX) && (TBIT_TCB_PRIORITY == 8) */
 	BIT_FIELD_UINT	priority : TBIT_TCB_PRIORITY;
 									/* 現在の優先度（内部表現）*/
-#endif  /* defined(UINT8_MAX) && (TBIT_TCB_PRIORITY == 8) */
+#endif /* defined(UINT8_MAX) && (TBIT_TCB_PRIORITY == 8) */
 	BIT_FIELD_BOOL	actque : 1;		/* 起動要求キューイング */
 	BIT_FIELD_BOOL	wupque : 1;		/* 起床要求キューイング */
 	BIT_FIELD_BOOL	enatex : 1;		/* タスク例外処理許可状態 */
@@ -337,21 +337,14 @@ extern QUEUE	ready_queue[TNUM_TPRI];
 extern uint16_t	ready_primap;
 
 /*
- *  使用していないTCBのリスト
- */
-extern QUEUE	free_tcb;
-
-/*
  *  タスクIDの最大値（kernel_cfg.c）
  */
 extern const ID	tmax_tskid;
-extern const ID	tmax_stskid;
 
 /*
  *  タスク初期化ブロックのエリア（kernel_cfg.c）
  */
 extern const TINIB	tinib_table[];
-extern TINIB		atinib_table[];
 
 /*
  *  タスク生成順序テーブル（kernel_cfg.c）
@@ -367,7 +360,6 @@ extern TCB	tcb_table[];
  *  タスクの数
  */
 #define tnum_tsk	((uint_t)(tmax_tskid - TMIN_TSKID + 1))
-#define tnum_stsk	((uint_t)(tmax_stskid - TMIN_TSKID + 1))
 
 /*
  *  タスクIDからTCBを取り出すためのマクロ

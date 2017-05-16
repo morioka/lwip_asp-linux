@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2009 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: task_sync.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: task_sync.c 1453 2009-02-18 09:09:34Z ertl-hiro $
  */
 
 /*
@@ -224,10 +224,7 @@ wup_tsk(ID tskid)
 	p_tcb = get_tcb_self(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat)) {
+	if (TSTAT_DORMANT(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else if (TSTAT_WAIT_SLP(p_tcb->tstat)) {
@@ -269,10 +266,7 @@ iwup_tsk(ID tskid)
 	p_tcb = get_tcb(tskid);
 
 	i_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat)) {
+	if (TSTAT_DORMANT(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else if (TSTAT_WAIT_SLP(p_tcb->tstat)) {
@@ -314,10 +308,7 @@ can_wup(ID tskid)
 	p_tcb = get_tcb_self(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (TSTAT_DORMANT(p_tcb->tstat)) {
+	if (TSTAT_DORMANT(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else {
@@ -350,10 +341,7 @@ rel_wai(ID tskid)
 	p_tcb = get_tcb(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (!TSTAT_WAITING(p_tcb->tstat)) {
+	if (!TSTAT_WAITING(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else {
@@ -388,10 +376,7 @@ irel_wai(ID tskid)
 	p_tcb = get_tcb(tskid);
 
 	i_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (!TSTAT_WAITING(p_tcb->tstat)) {
+	if (!TSTAT_WAITING(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else {
@@ -428,9 +413,6 @@ sus_tsk(ID tskid)
 	t_lock_cpu();
 	if (p_tcb == p_runtsk && !dspflg) {
 		ercd = E_CTX;
-	}
-	else if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
 	}
 	else if (TSTAT_DORMANT(p_tcb->tstat)) {
 		ercd = E_OBJ;
@@ -483,10 +465,7 @@ rsm_tsk(ID tskid)
 	p_tcb = get_tcb(tskid);
 
 	t_lock_cpu();
-	if (p_tcb->p_tinib->tskatr == TA_NOEXS) {
-		ercd = E_NOEXS;
-	}
-	else if (!TSTAT_SUSPENDED(p_tcb->tstat)) {
+	if (!TSTAT_SUSPENDED(p_tcb->tstat)) {
 		ercd = E_OBJ;
 	}
 	else if (!TSTAT_WAITING(p_tcb->tstat)) {

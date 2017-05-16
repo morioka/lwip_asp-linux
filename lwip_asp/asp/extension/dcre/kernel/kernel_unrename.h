@@ -131,7 +131,7 @@
  */
 #undef free_isrcb
 #undef initialize_isr
-#undef inthdr_call_isr
+#undef call_isr
 #undef initialize_interrupt
 
 /*
@@ -162,12 +162,12 @@
 #undef aflginib_table
 #undef flgcb_table
 #undef tmax_dtqid
-#undef tmax_adtqid
+#undef tmax_sdtqid
 #undef dtqinib_table
-#undef sdtqinib_table
+#undef adtqinib_table
 #undef dtqcb_table
 #undef tmax_pdqid
-#undef tmax_apdqid
+#undef tmax_spdqid
 #undef pdqinib_table
 #undef apdqinib_table
 #undef pdqcb_table
@@ -342,7 +342,7 @@
  */
 #undef _free_isrcb
 #undef _initialize_isr
-#undef _inthdr_call_isr
+#undef _call_isr
 #undef _initialize_interrupt
 
 /*
@@ -373,12 +373,12 @@
 #undef _aflginib_table
 #undef _flgcb_table
 #undef _tmax_dtqid
-#undef _tmax_adtqid
+#undef _tmax_sdtqid
 #undef _dtqinib_table
-#undef _sdtqinib_table
+#undef _adtqinib_table
 #undef _dtqcb_table
 #undef _tmax_pdqid
-#undef _tmax_apdqid
+#undef _tmax_spdqid
 #undef _pdqinib_table
 #undef _apdqinib_table
 #undef _pdqcb_table

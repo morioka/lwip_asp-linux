@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2011 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -54,6 +54,7 @@
 #include "toppers/itronx/preprocess.hpp"
 #include <boost/spirit/include/classic.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace toppers
 {
@@ -101,16 +102,26 @@ namespace toppers
       }
       virtual void do_generate_cfg1_def() const
       {
-        ofile_ << "const uint32_t TOPPERS_cfg_magic_number = 0x12345678;\n"
-                  "const uint32_t TOPPERS_cfg_sizeof_signed_t = sizeof(signed_t);\n"
-                  "const uint32_t TOPPERS_cfg_sizeof_pointer = sizeof(const volatile void*);\n"
-                  "const unsigned_t TOPPERS_cfg_CHAR_BIT = CHAR_BIT;\n"
-                  "const unsigned_t TOPPERS_cfg_CHAR_MAX = CHAR_MAX;\n"
-                  "const unsigned_t TOPPERS_cfg_CHAR_MIN = CHAR_MIN;\n"
-                  "const unsigned_t TOPPERS_cfg_SCHAR_MAX = SCHAR_MAX;\n"
-                  "const unsigned_t TOPPERS_cfg_SHRT_MAX = SHRT_MAX;\n"
-                  "const unsigned_t TOPPERS_cfg_INT_MAX = INT_MAX;\n"
-                  "const unsigned_t TOPPERS_cfg_LONG_MAX = LONG_MAX;\n"
+        std::string kernel( get_global_string( "kernel" ) );
+        if ( kernel == "atk2_osap" || kernel == "atk2_no_osap" )
+        {
+          ofile_ << "const uint32 TOPPERS_cfg_magic_number = 0x12345678;\n"
+                    "const uint32 TOPPERS_cfg_sizeof_signed_t = sizeof(signed_t);\n"
+                    "const uint32 TOPPERS_cfg_sizeof_pointer = sizeof(const volatile void*);\n";
+        }
+        else
+        {
+          ofile_ << "const uint32_t TOPPERS_cfg_magic_number = 0x12345678;\n"
+                    "const uint32_t TOPPERS_cfg_sizeof_signed_t = sizeof(signed_t);\n"
+                    "const uint32_t TOPPERS_cfg_sizeof_pointer = sizeof(const volatile void*);\n";
+        }
+        ofile_ << "const unsigned_t TOPPERS_cfg_CHAR_BIT = ((unsigned char)~0u == 0xff ? 8 : 16);\n"  // CHAR_BITが8または16ビットであることを仮定
+                  "const unsigned_t TOPPERS_cfg_CHAR_MAX = ((char)-1 < 0 ? (char)((unsigned char)~0u >> 1) : (unsigned char)~0u);\n"
+                  "const unsigned_t TOPPERS_cfg_CHAR_MIN = (unsigned_t)((char)-1 < 0 ? -((unsigned char)~0u >> 1) - 1 : 0);\n"
+                  "const unsigned_t TOPPERS_cfg_SCHAR_MAX = (signed char)((unsigned char)~0u >> 1);\n"
+                  "const unsigned_t TOPPERS_cfg_SHRT_MAX = (short)((unsigned short)~0u >> 1);\n"
+                  "const unsigned_t TOPPERS_cfg_INT_MAX = (int)(~0u >> 1);\n"
+                  "const unsigned_t TOPPERS_cfg_LONG_MAX = (long)(~0ul >> 1);\n"
                   "\n";
 
         if ( def_table_ != 0 )	// 「値取得シンボルテーブル」
@@ -127,7 +138,8 @@ namespace toppers
               is_pp = true;
             }
 
-            std::string definition = ( iter->is_signed ? "const signed_t " : "const unsigned_t " );
+            std::string type = ( iter->is_signed ? "signed_t" : "unsigned_t" );
+            std::string definition = "const " + type + " ";
             definition += "TOPPERS_cfg_" + iter->name;
             if ( is_pp )
             {
@@ -149,7 +161,7 @@ namespace toppers
             else
             {
               definition +=
-                          " = " + iter->expression + ";\n";
+                          " = ( " + type + " )" + iter->expression + ";\n";
             }
             ofile_ << definition;
           }
@@ -335,14 +347,14 @@ namespace toppers
 
             if ( block_type == "CLASS" )
             {
-              if ( !get_global< bool >( "has-class" ) )
+              if ( !get_global_bool( "has-class" ) )
               {
                 error( "cannot use `%1%'", "CLASS" );
               }
             }
             if ( block_type == "DOMAIN" || block_type == "KERNEL_DOMAIN"  )
             {
-              if ( !get_global< bool >( "has-domain" ) )
+              if ( !get_global_bool( "has-domain" ) )
               {
                 error( "cannot use `%1%'", block_type );
               }
@@ -430,7 +442,7 @@ namespace toppers
               oss << "const unsigned_t TOPPERS_cfg_valueof_" << id << " = ";
               if ( id == "TDOM_KERNEL" )
               {
-                oss << "-1" << ";\n";
+                oss << "( unsigned_t ) (-1)" << ";\n";
               }
               else
               {
@@ -482,7 +494,7 @@ namespace toppers
               if ( !current_domain.empty() )
               {
                 api.set_domain( current_domain );
-                oss << "const unsigned_t TOPPERS_cfg_valueof_DOMAIN_" << serial << " = " << current_domain << ";";
+                oss << "const unsigned_t TOPPERS_cfg_valueof_DOMAIN_" << serial << " = ( unsigned_t ) ( " << current_domain << " );";
               }
 
               api_array.push_back( api );
@@ -527,14 +539,16 @@ namespace toppers
                 if ( ( api_iter->symbol[0] == '.' ) || ( api_iter->symbol[0] == '+' ) )
                     // 整数定数式パラメータのみ出力
                 {
+                  char const* type;
                   if ( api_iter->symbol[0] == '.' )
                   {
-                    oss << "const unsigned_t ";
+                    type = "unsigned_t";
                   }
                   else
                   {
-                    oss << "const signed_t ";
+                    type = "signed_t";
                   }
+                  oss << "const " << type << " ";
 
                   // 省略可能パラメータ情報の末尾にある ? を除去
                   std::string parameter_name( api_iter->symbol.c_str() + 1 );
@@ -542,8 +556,14 @@ namespace toppers
                   {
                     parameter_name.resize( parameter_name.size() - 1 );
                   }
+                  // 末尾の ... を除去 & order を付加
+                  if ( parameter_name.size() > 3 && parameter_name.substr( parameter_name.size() - 3 ) == "..." )
+                  {
+                    parameter_name.resize( parameter_name.size() - 3 );
+                    parameter_name += boost::lexical_cast< std::string >( api_iter->order );
+                  }
 
-                  oss << "TOPPERS_cfg_valueof_" << parameter_name << "_" << serial << " = ( " << api_iter->text << " ); ";
+                  oss << "TOPPERS_cfg_valueof_" << parameter_name << "_" << serial << " = ( " << type << " )( " << api_iter->text << " ); ";
 
                   // 暫定値を設定
                   char* endptr;
@@ -561,6 +581,12 @@ namespace toppers
                   if ( *parameter_name.rbegin() == '\?' )
                   {
                     parameter_name.resize( parameter_name.size() - 1 );
+                  }
+                  // 末尾の ... を除去 & order を付加
+                  if ( parameter_name.size() > 3 && parameter_name.substr( parameter_name.size() - 3 ) == "..." )
+                  {
+                    parameter_name.resize( parameter_name.size() - 3 );
+                    parameter_name += boost::lexical_cast< std::string >( api_iter->order );
                   }
 
                   oss << "const char TOPPERS_cfg_valueof_" << parameter_name << "_" << serial << "[] = " << api_iter->text << "; ";
@@ -597,7 +623,7 @@ namespace toppers
 
       std::string domid_defs_temp;
 
-      if ( get_global< bool >( "has-domain" ) )
+      if ( get_global_bool( "has-domain" ) )
       {
         load_id_input_file( id_map ); // --id-input-fileによるドメインIDの読み込み
 
@@ -685,15 +711,28 @@ namespace toppers
 
       // int128_tは故意に無視
       // int128_tに揃えると処理が重くなりすぎるため
-      pimpl_->ofile_ << "\n#ifdef INT64_MAX\n"
-                        "  typedef int64_t signed_t;\n"
-                        "  typedef uint64_t unsigned_t;\n"
-                        "#else\n"
-                        "  typedef int32_t signed_t;\n"
-                        "  typedef uint32_t unsigned_t;\n"
-                        "#endif\n";
+      if ( get_global< int >( "atk" ) < 2 )
+      {
+        pimpl_->ofile_ << "\n#ifdef INT64_MAX\n"
+                          "  typedef int64_t signed_t;\n"
+                          "  typedef uint64_t unsigned_t;\n"
+                          "#else\n"
+                          "  typedef int32_t signed_t;\n"
+                          "  typedef uint32_t unsigned_t;\n"
+                          "#endif\n";
+      }
+      else
+      {
+        pimpl_->ofile_ << "\n#ifdef INT64_MAX\n"
+                          "  typedef sint64 signed_t;\n"
+                          "  typedef uint64 unsigned_t;\n"
+                          "#else\n"
+                          "  typedef sint32 signed_t;\n"
+                          "  typedef uint32 unsigned_t;\n"
+                          "#endif\n";
+      }
 
-      pimpl_->ofile_ << "\n#include <target_cfg1_out.h>\n\n";
+      pimpl_->ofile_ << "\n#include \"target_cfg1_out.h\"\n\n";
 
       pimpl_->do_generate_cfg1_def();
       pimpl_->ofile_ << '\n' << pimpl_->domid_defs_ << '\n';
@@ -748,6 +787,12 @@ namespace toppers
      */
     void cfg1_out::load_srec()
     {
+      if ( pimpl_->def_table_ == 0 )
+      {
+        pimpl_->little_endian_ = false; // 値が不定になることを回避
+        return;
+      }
+
       std::ifstream srec_ifs( ( pimpl_->ofile_.file_name() + ".srec" ).c_str() );
       if ( !srec_ifs.is_open() )
       {
@@ -878,6 +923,13 @@ namespace toppers
               parameter_name.resize( parameter_name.size() - 1 );
             }
 
+            // 末尾の ... を除去 & order を付加
+            if ( parameter_name.size() > 3 && parameter_name.substr( parameter_name.size() - 3 ) == "..." )
+            {
+              parameter_name.resize( parameter_name.size() - 3 );
+              parameter_name += boost::lexical_cast< std::string >( api_iter->order );
+            }
+
             std::string symbol = boost::str( boost::format( "TOPPERS_cfg_valueof_%s_%d" ) % parameter_name % serial );
             nm_symbol::entry nm_entry = syms_->find( symbol );
             if ( nm_entry.type == -1 )
@@ -901,6 +953,13 @@ namespace toppers
             if ( *parameter_name.rbegin() == '\?' )
             {
               parameter_name.resize( parameter_name.size() - 1 );
+            }
+
+            // 末尾の ... を除去 & order を付加
+            if ( parameter_name.size() > 3 && parameter_name.substr( parameter_name.size() - 3 ) == "..." )
+            {
+              parameter_name.resize( parameter_name.size() - 3 );
+              parameter_name += boost::lexical_cast< std::string >( api_iter->order );
             }
 
             std::string symbol = boost::str( boost::format( "TOPPERS_cfg_valueof_%s_%d" ) % parameter_name % serial );
@@ -968,7 +1027,7 @@ namespace toppers
 
         if ( id_map.find( name ) != id_map.end() )
         {
-          fatal( _( "`%1%\' is duplicated" ), name );
+          fatal( _( "E_OBJ: `%1%\' is duplicated" ), name );
         }
         else
         {

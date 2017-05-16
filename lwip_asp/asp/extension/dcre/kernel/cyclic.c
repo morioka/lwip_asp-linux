@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2010 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: cyclic.c 1966 2010-11-20 07:23:56Z ertl-hiro $
+ *  @(#) $Id: cyclic.c 2669 2014-12-02 01:47:14Z ertl-hiro $
  */
 
 /*
@@ -142,7 +142,8 @@ initialize_cyclic(void)
 	CYCCB	*p_cyccb;
 	CYCINIB	*p_cycinib;
 
-	for (p_cyccb = cyccb_table, i = 0; i < tnum_scyc; p_cyccb++, i++) {
+	for (i = 0; i < tnum_scyc; i++) {
+		p_cyccb = &(cyccb_table[i]);
 		p_cyccb->p_cycinib = &(cycinib_table[i]);
 		if ((p_cyccb->p_cycinib->cycatr & TA_STA) != 0U) {
 			p_cyccb->cycsta = true;
@@ -153,7 +154,8 @@ initialize_cyclic(void)
 		}
 	}
 	queue_initialize(&free_cyccb);
-	for (j = 0; i < tnum_cyc; p_cyccb++, i++, j++) {
+	for (j = 0; i < tnum_cyc; i++, j++) {
+		p_cyccb = &(cyccb_table[i]);
 		p_cycinib = &(acycinib_table[j]);
 		p_cycinib->cycatr = TA_NOEXS;
 		p_cyccb->p_cycinib = ((const CYCINIB *) p_cycinib);
@@ -184,7 +186,7 @@ acre_cyc(const T_CCYC *pk_ccyc)
 	CHECK_PAR(0 <= pk_ccyc->cycphs && pk_ccyc->cycphs <= TMAX_RELTIM);
 
 	t_lock_cpu();
-	if (queue_empty(&free_cyccb)) {
+	if (tnum_cyc == 0 || queue_empty(&free_cyccb)) {
 		ercd = E_NOID;
 	}
 	else {
@@ -199,7 +201,8 @@ acre_cyc(const T_CCYC *pk_ccyc)
 
 		if ((p_cyccb->p_cycinib->cycatr & TA_STA) != 0U) {
 			p_cyccb->cycsta = true;
-			tmevtb_enqueue_cyc(p_cyccb, (EVTTIM)(p_cyccb->p_cycinib->cycphs));
+			tmevtb_enqueue_cyc(p_cyccb,
+								base_time + p_cyccb->p_cycinib->cycphs);
 		}
 		else {
 			p_cyccb->cycsta = false;
@@ -279,14 +282,16 @@ sta_cyc(ID cycid)
 	if (p_cyccb->p_cycinib->cycatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_cyccb->cycsta) {
-		tmevtb_dequeue(&(p_cyccb->tmevtb));
-	}
 	else {
-		p_cyccb->cycsta = true;
+		if (p_cyccb->cycsta) {
+			tmevtb_dequeue(&(p_cyccb->tmevtb));
+		}
+		else {
+			p_cyccb->cycsta = true;
+		}
+		tmevtb_enqueue_cyc(p_cyccb, base_time + p_cyccb->p_cycinib->cycphs);
+		ercd = E_OK;
 	}
-	tmevtb_enqueue_cyc(p_cyccb, base_time + p_cyccb->p_cycinib->cycphs);
-	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:
@@ -316,11 +321,13 @@ stp_cyc(ID cycid)
 	if (p_cyccb->p_cycinib->cycatr == TA_NOEXS) {
 		ercd = E_NOEXS;
 	}
-	else if (p_cyccb->cycsta) {
-		p_cyccb->cycsta = false;
-		tmevtb_dequeue(&(p_cyccb->tmevtb));
+	else {
+		if (p_cyccb->cycsta) {
+			p_cyccb->cycsta = false;
+			tmevtb_dequeue(&(p_cyccb->tmevtb));
+		}
+		ercd = E_OK;
 	}
-	ercd = E_OK;
 	t_unlock_cpu();
 
   error_exit:

@@ -1,5 +1,5 @@
 
-	TOPPERS/ASP Kernel（Release 1.7.0）
+	TOPPERS/ASP Kernel（Release 1.9.2）
 		Toyohashi Open Platform for Embedded Real-Time Systems/
 		Advanced Standard Profile Kernel
 
@@ -43,14 +43,5 @@ TOPPERSユーザーズメーリングリストへの登録方法については�
 ASPカーネルを，TOPPERSプロジェクトからオープンソースにすることを前提に，
 未サポートのターゲットにポーティングされる場合には，あらかじめご相談く
 ださると幸いです．
-
-【今後の改造計画】
-
-今後（Release 1.8以降），ASPカーネルに対して大きな変更の可能性がある項
-目は次の通りです．
-
-・TOPPERS組込みコンポーネントシステム（TECS）の導入．現時点では，TECSの
-　配布パッケージにTECS対応のASPカーネルが含まれていますが，ASPのパッケー
-　ジをTECS対応にする可能性があります．
 
 以上

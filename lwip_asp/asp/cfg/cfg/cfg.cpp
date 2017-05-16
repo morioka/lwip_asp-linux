@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2007-2009 by TAKAGI Nobuhisa
+ *  Copyright (C) 2007-2012 by TAKAGI Nobuhisa
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -34,6 +34,19 @@
  *  の責任を負わない．
  * 
  */
+
+// Boost.Filesystem v3内でstd::locale("")が使用されているが、GCCの不具合で
+// 例外が発生する。
+// これを回避するための暫定対応
+#ifdef  __GNUC__
+#include <stdlib.h>
+namespace Ticket_83_fix
+{
+  char s_[] = "LANG=C";
+  int _ = putenv(s_);
+}
+#endif
+
 #include "cfg.hpp"
 #include <boost/program_options.hpp>
 #include <boost/spirit/include/classic.hpp>
@@ -88,12 +101,14 @@ namespace
       ( "external-id", _( "output ID numbers as external `const\' object" ) )
       ( "print-dependencies,M", po::value< std::string >(), _( "output dependencies of source file (for `make\')" ) )
       ( "with-software-components", _( "with software components" ) )
+      ( "ini-file", po::value< std::string >()->default_value( std::string() ), _( "configuration file for XML" ) )
+      ( "omit-symbol", _( "omit Symbol table and ROM image(S-record) files. Only use in pass 2." ) )
       ;
 
     // 非表示オプション
     po::options_description hidden( _( "Hidden options" ) );
     hidden.add_options()
-      ( "input-file,s", po::value< std::string >(), _( "input file" ) )
+      ( "input-file,s", po::value< std::vector<std::string> >(), _( "input files" ) )
       ;
     
     po::options_description cmdline_options;
@@ -125,25 +140,65 @@ namespace
     }
 
     toppers::global( "pass" ) = pass;
+    if ( vm.count( "input-file" ) )
+    {
+      std::string inputfile;
+      const std::vector< std::string >& v =
+      vm["input-file"].as< std::vector< std::string > >();
+      for( int i = 0 ; i < v.size() ; i++ )
+      {
+        inputfile += v[i];
+        if( i+1 < v.size()) inputfile += " ";
+      }
+      toppers::global( "input-file" )
+        = slashes_to_single_slash( inputfile );
+    }
     if ( vm.count( "kernel" ) )
     {
       std::string kernel = toppers::tolower( vm[ "kernel" ].as< std::string >() );
       toppers::global( "kernel" ) = kernel;
+      int atk = -1;
       bool has_class = false;
       bool has_domain = false;
+      bool oil = false;
+      bool xml = false;
 
       if ( kernel == "fmp" || kernel == "fmp+hrp2" || kernel == "hrp2+fmp" )
       {
         has_class = true;
       }
-      if ( kernel == "hrp2" || kernel == "fmp+hrp2" || kernel == "hrp2+fmp" )
+      if ( kernel == "hrp2" || kernel == "fmp+hrp2" || kernel == "hrp2+fmp" || kernel == "atk2" || kernel == "atk2_osap" )
       {
         has_domain = true;
+      }
+
+      if ( kernel.compare( 0, 4, "atk1" ) == 0 )
+      {
+        oil = true;
+        atk = 1;
+      }
+      else if ( kernel.compare( 0, 4, "atk2" ) == 0 )
+      {
+        std::string input_file = toppers::get_global_string( "input-file" );
+        std::string::size_type pos = input_file.rfind( '.' );
+        std::string suffix( input_file.substr( pos ) );
+        if ( pos != std::string::npos && suffix == ".oil" )
+        {
+          oil = true;
+        }
+        else if ( suffix != ".cfg" && kernel != "atk2_no_osap" && kernel != "atk2_osap" )
+        {
+          xml = true;
+        }
+        atk = 2;
       }
 
       toppers::global( "max-pass" ) = ( has_domain ? 4 : 3 );
       toppers::global( "has-class" ) = has_class;
       toppers::global( "has-domain" ) = has_domain;
+      toppers::global( "oil" ) = oil;
+      toppers::global( "xml" ) = xml;
+      toppers::global( "atk" ) = atk;
     }
     if ( vm.count( "include-path" ) )
     {
@@ -155,11 +210,6 @@ namespace
     {
       toppers::global( "template-file" )
         = slashes_to_single_slash( vm[ "template-file" ].as< std::string >() );
-    }
-    if ( vm.count( "input-file" ) )
-    {
-      toppers::global( "input-file" )
-        = slashes_to_single_slash( vm[ "input-file" ].as< std::string >() );
     }
     if ( vm.count( "input-charset" ) )
     {
@@ -226,7 +276,7 @@ namespace
       {
         include_path = boost::any_cast< std::vector< std::string > >( t );
       }
-      include_path.push_back( toppers::get_global< std::string >( "cfg-directory" ) );
+      include_path.push_back( toppers::get_global_string( "cfg-directory" ) );
       toppers::global( "include-path" ) = include_path;
     }
     if ( vm.count( "output-directory" ) )
@@ -243,7 +293,7 @@ namespace
     }
     else
     {
-      toppers::global( "symbol-table" ) = toppers::get_global< std::string >( "kernel" ) + ".syms";
+      toppers::global( "symbol-table" ) = toppers::get_global_string( "kernel" ) + ".syms";
     }
     if ( vm.count( "id-output-file" ) )
     {
@@ -259,6 +309,7 @@ namespace
     }
     toppers::global( "external-id" ) = vm.count( "external-id" ) ? true : false;
     toppers::global( "with-software-components" ) = vm.count( "with-software-components" ) ? true : false;
+    toppers::global( "omit-symbol" ) = vm.count( "omit-symbol" ) ? true : false;
 
     toppers::global( "version" ) = std::string( CFG_VERSION );
 
@@ -272,6 +323,27 @@ namespace
       toppers::global( "help" ) = boost::lexical_cast< std::string >( visible );
       std::cout << visible << std::endl;
       toppers::global( "pass0" ) = true;
+    }
+    if ( vm.count( "ini-file" ) )
+    {
+      std::string ini_file( slashes_to_single_slash( vm[ "ini-file" ].as< std::string >() ) );
+      toppers::global( "ini-file" ) = ini_file;
+      std::ifstream ifs( ini_file.c_str() );
+      if ( ifs.is_open() )
+      {
+        while ( ifs )
+        {
+          std::string buf;
+          std::getline( ifs, buf );
+          if ( buf.empty() || buf[0] == ';' )
+            continue;
+          std::string::size_type pos = buf.find( '=' );
+          if ( pos != std::string::npos )
+          {
+            toppers::global( "XML_" + buf.substr( 0, pos ) ) = buf.substr( pos + 1 );
+          }
+        }
+      }
     }
     return pass;
   }
