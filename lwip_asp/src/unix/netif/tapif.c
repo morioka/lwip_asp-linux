@@ -91,9 +91,24 @@ static void  tapif_input(struct netif *netif);
 
 static void tapif_thread(void *data);
 
+#ifdef	LWIP_ASP_LINUX
+
+#include <netif/list.h>
+
+#define	TAPIF_QUEUE_SIZE 10
+
+static list *tapif_queue_rx = NULL;
+static pthread_t main_thread = 0;
+#endif
+
 /*-----------------------------------------------------------------------------------*/
+#ifdef	LWIP_ASP_LINUX
+static void
+eth_init_low(struct netif *netif)
+#else
 static void
 low_level_init(struct netif *netif)
+#endif
 {
   struct tapif *tapif;
   char buf[sizeof(IFCONFIG_ARGS) + sizeof(IFCONFIG_BIN) + 50];
@@ -143,7 +158,19 @@ low_level_init(struct netif *netif)
 
   LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_init: system(\"%s\");\n", buf));
   system(buf);
+#ifdef	LWIP_ASP_LINUX
+  tapif_queue_rx = list_new(TAPIF_QUEUE_SIZE);
+  if (tapif_queue_rx == NULL) {
+    perror("tapif_init: cannot create tapif_queue_rx");
+    exit(1);
+  }
+  if (pthread_create(&main_thread, NULL, (void *(*)(void *))tapif_thread, netif) != 0) {
+    perror("tapif_init: cannot create tapif_thread");
+    exit(1);
+  }
+#else
   sys_thread_new("tapif_thread", tapif_thread, netif, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
+#endif
 
 }
 /*-----------------------------------------------------------------------------------*/
@@ -156,9 +183,13 @@ low_level_init(struct netif *netif)
  *
  */
 /*-----------------------------------------------------------------------------------*/
-
+#ifdef	LWIP_ASP_LINUX
+static err_t
+eth_output_zerocopy_low(struct netif *netif, struct pbuf *p)
+#else
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
+#endif
 {
   struct pbuf *q;
   char buf[1514];
@@ -200,8 +231,13 @@ low_level_output(struct netif *netif, struct pbuf *p)
  *
  */
 /*-----------------------------------------------------------------------------------*/
+#ifdef	LWIP_ASP_LINUX
+static struct pbuf *
+tapif_input_low(struct tapif *tapif)
+#else
 static struct pbuf *
 low_level_input(struct tapif *tapif)
+#endif
 {
   struct pbuf *p, *q;
   u16_t len;
@@ -288,7 +324,11 @@ tapif_input(struct netif *netif)
 
   tapif = (struct tapif *)netif->state;
 
+#ifdef	LWIP_ASP_LINUX
+  p = tapif_input_low(tapif);
+#else
   p = low_level_input(tapif);
+#endif
 
   if(p == NULL) {
     LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: low_level_input returned NULL\n"));
@@ -306,11 +346,18 @@ tapif_input(struct netif *netif)
   case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
     /* full packet send to tcpip_thread to process */
+#ifdef	LWIP_ASP_LINUX
+    if (list_push(tapif_queue_rx, p) == 0) {
+#else
     if (netif->input(p, netif) != ERR_OK) {
+#endif
       LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
        pbuf_free(p);
        p = NULL;
     }
+#ifdef	LWIP_ASP_LINUX
+    pthread_kill(main_thread, INT_ETH_RECV);
+#endif
     break;
   default:
     pbuf_free(p);
@@ -354,3 +401,135 @@ tapif_init(struct netif *netif)
   return ERR_OK;
 }
 /*-----------------------------------------------------------------------------------*/
+
+/*
+ * original: fm3_sample_ether_api.c
+ */
+//#include <kernel.h>
+//#include "kernel/kernel_int.h"
+#include "kernel_cfg.h"
+
+#include "arch/cc.h"
+#include "debug.h"
+#include "eth_api.h"
+
+#include <string.h>
+#include "93c46.h"
+#include "common.h"
+
+#ifdef	LWIP_ASP_LINUX
+void eth_init(struct netif *netif)
+#else
+void eth_init(u8_t *hwaddr)
+#endif
+{
+#ifdef	LWIP_ASP_LINUX
+	eth_init_low(netif);
+#else
+	read_93c46(4, 6, hwaddr);
+	printf("%02x:%02x:%02x:%02x:%02x:%02x\r\n", hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+	Ether_Init(hwaddr);
+	return;
+#endif
+}
+
+#ifndef	LWIP_ASP_LINUX
+static EMAC_DMA_RXDESC *prxdesc;
+static char *ethp;
+#endif
+
+int eth_input_len(void)
+{
+	u16_t len = 0;
+
+	wai_sem(SEM_ETH);
+#ifndef	LWIP_ASP_LINUX
+	prxdesc = RXDESC_Received();
+	if( NULL != prxdesc )
+	{
+		len = prxdesc->RDES0_f.FL;
+		ethp = (char *)prxdesc->RDES2;
+	}
+#endif
+	return len;
+}
+
+u16_t eth_input_buf(void *payload, u16_t len)
+{
+#ifndef	LwIP_ASP_LINUX
+	if(len)
+	{
+		memcpy(payload, ethp, len);
+		ethp += len;
+		len -= len;
+	}
+#endif
+	return len;
+}
+
+void eth_input_ack(void)
+{
+#ifdef	LWIP_ASP_LINUX
+	prxdesc->RDES0_f.OWN = 1;
+#endif
+	return;
+}
+
+void eth_input_end(void)
+{
+	sig_sem(SEM_ETH);
+	return;
+}
+
+void eth_output_start(void)
+{
+	wai_sem(SEM_ETH);
+	return;
+}
+
+void eth_output(void *payload, u16_t len)
+{
+#ifndef	LWIP_ASP_LINUX
+	Packet_Send((unsigned char *)payload, (unsigned int)len);
+#endif
+	return;
+}
+
+#ifdef	LWIP_ASP_LINUX
+void eth_output_zerocopy(struct netif *netif, struct pbuf *p)
+{
+	pbuf_ref(p);
+	eth_output_zerocopy_low(struct netif *netif, struct pbuf *p)
+	pbuf_free(p);
+}
+#endif
+
+void eth_output_end(void)
+{
+	sig_sem(SEM_ETH);
+	return;
+}
+
+void eth_int(intptr_t exinf)
+{
+#ifdef	LWIP_ASP_LINUX
+	struct pbuf *p;
+
+	if (tapif_queue_rx == NULL) {
+		perror("eth_int: tapif_queue_rx is NULL");
+		return;
+	}
+	p = list_pop(tapif_queue_rx);
+	if (p == NULL) {
+		perror("eth_int: tapif_queue_rx is empty");
+		return;
+	}
+	if (ipsnd_dtq(DTQ_ETH_RX, (void*)p) != ERR_OK) {
+		perror("eth_int: DTQ_ETH_RX is full");
+		free(p);
+	}
+#else
+	ETH_IRQHandler(FM3_ETHERNET_MAC0);
+#endif
+	isig_sem(SEM_RECV);
+}

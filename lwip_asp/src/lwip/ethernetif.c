@@ -106,7 +106,11 @@ low_level_init(struct netif *netif)
  
   /* Do whatever else is needed to initialize interface. */  
 #if 1
+#ifdef	LWIP_ASP_LINUX
+  eth_init(netif);
+#else
   eth_init(netif->hwaddr);
+#endif
 #endif
 }
 
@@ -149,7 +153,11 @@ low_level_output(struct netif *netif, struct pbuf *p)
 #if 0
     send data from(q->payload, q->len);
 #else
+#ifdef	LWIP_ASP_LINUX	// ZEROCOPY_TX
+    eth_output_zerocopy(netif, q);
+#else
     eth_output(q->payload, q->len);
+#endif
 #endif
   }
 
@@ -196,7 +204,11 @@ low_level_input(struct netif *netif)
 #endif
 
   /* We allocate a pbuf chain of pbufs from the pool. */
+#ifdef	LWIP_ASP_LINUX	// ZEROCOPY_RX
+  p = eth_input_buf_zerocopy();
+#else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+#endif
   
   if (p != NULL) {
 
