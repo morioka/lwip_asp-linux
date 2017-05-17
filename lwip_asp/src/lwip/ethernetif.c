@@ -85,7 +85,9 @@ void  ethernetif_input(struct netif *netif);
 static void
 low_level_init(struct netif *netif)
 {
+#ifndef	LWIP_ASP_LINUX
   struct ethernetif *ethernetif = netif->state;
+#endif
   
   /* set MAC hardware address length */
   netif->hwaddr_len = ETHARP_HWADDR_LEN;
@@ -133,7 +135,9 @@ low_level_init(struct netif *netif)
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
 {
+#ifndef LWIP_ASP_LINUX
   struct ethernetif *ethernetif = netif->state;
+#endif
   struct pbuf *q;
 
 #if 0
@@ -187,7 +191,9 @@ low_level_output(struct netif *netif, struct pbuf *p)
 static struct pbuf *
 low_level_input(struct netif *netif)
 {
+#ifndef LWIP_ASP_LINUX
   struct ethernetif *ethernetif = netif->state;
+#endif
   struct pbuf *p, *q;
   u16_t len;
 
@@ -201,6 +207,9 @@ low_level_input(struct netif *netif)
 
 #if ETH_PAD_SIZE
   len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
+#endif
+#ifdef LWIP_ASP_LINUX
+  len = len;
 #endif
 
   /* We allocate a pbuf chain of pbufs from the pool. */
@@ -270,11 +279,15 @@ low_level_input(struct netif *netif)
 void
 ethernetif_input(struct netif *netif)
 {
+#ifndef LWIP_ASP_LINUX
   struct ethernetif *ethernetif;
+#endif
   struct eth_hdr *ethhdr;
   struct pbuf *p;
 
+#ifndef LWIP_ASP_LINUX
   ethernetif = netif->state;
+#endif
 
   /* move received packet into a new pbuf */
   p = low_level_input(netif);

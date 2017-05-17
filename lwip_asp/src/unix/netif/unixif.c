@@ -127,6 +127,9 @@ unix_socket_client(const char *name)
 #else
   len = sizeof(unix_addr.sun_family) + strlen(unix_addr.sun_path) + 1;
 #endif /* linux */
+#ifdef LWIP_ASP_LINUX
+  len = len;
+#endif
   if (connect(fd, (struct sockaddr *) &unix_addr,
 	     sizeof(struct sockaddr_un)) < 0) {
     perror("unixif: unix_socket_client: socket");
@@ -162,6 +165,9 @@ unix_socket_server(const char *name)
   len = sizeof(unix_addr.sun_family) +
     strlen(unix_addr.sun_path) + 1;
 #endif /* linux */
+#ifdef LWIP_ASP_LINUX
+  len = len;
+#endif
 
   /* bind the name to the descriptor */
   if (bind(fd, (struct sockaddr *) &unix_addr,

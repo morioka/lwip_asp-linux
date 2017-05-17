@@ -94,11 +94,15 @@ static void tapif_thread(void *data);
 #ifdef	LWIP_ASP_LINUX
 
 #include <netif/list.h>
+#include <pthread.h>
+#include <signal.h>
 
 #define	TAPIF_QUEUE_SIZE 10
 
-static list *tapif_queue_rx = NULL;
+static struct list *tapif_queue_rx = NULL;
 static pthread_t main_thread = 0;
+
+#define	INT_ETH_RECV	27	/* temporaliry value */
 #endif
 
 /*-----------------------------------------------------------------------------------*/
@@ -383,20 +387,24 @@ tapif_init(struct netif *netif)
   if (!tapif) {
     return ERR_MEM;
   }
+#ifndef LWIP_ASP_LINUX
   netif->state = tapif;
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;
   netif->output = etharp_output;
   netif->linkoutput = low_level_output;
   netif->mtu = 1500;
+#endif
   /* hardware address length */
   netif->hwaddr_len = 6;
 
   tapif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
 
+#ifndef LWIP_ASP_LINUX
   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
 
   low_level_init(netif);
+#endif
 
   return ERR_OK;
 }
@@ -414,8 +422,8 @@ tapif_init(struct netif *netif)
 #include "eth_api.h"
 
 #include <string.h>
-#include "93c46.h"
-#include "common.h"
+//#include "93c46.h"
+//#include "common.h"
 
 #ifdef	LWIP_ASP_LINUX
 void eth_init(struct netif *netif)
@@ -424,6 +432,7 @@ void eth_init(u8_t *hwaddr)
 #endif
 {
 #ifdef	LWIP_ASP_LINUX
+	tapif_init(netif);
 	eth_init_low(netif);
 #else
 	read_93c46(4, 6, hwaddr);
@@ -456,7 +465,7 @@ int eth_input_len(void)
 
 u16_t eth_input_buf(void *payload, u16_t len)
 {
-#ifndef	LwIP_ASP_LINUX
+#ifndef	LWIP_ASP_LINUX
 	if(len)
 	{
 		memcpy(payload, ethp, len);
@@ -467,9 +476,25 @@ u16_t eth_input_buf(void *payload, u16_t len)
 	return len;
 }
 
+#ifdef	LWIP_ASP_LINUX
+struct pbuf* eth_input_buf_zerocopy()
+{
+	struct pbuf *p = NULL;
+	ER ercd;
+
+//	ercd = rcv_dtq(DTQ_ETH_RX, (VP_INT*) &p);
+	ercd = rcv_dtq(DTQ_ETH_RX, (intptr_t*) &p);
+	if (ercd != E_OK) {
+		p = NULL;
+	}
+
+	return p;
+}
+#endif
+
 void eth_input_ack(void)
 {
-#ifdef	LWIP_ASP_LINUX
+#ifndef	LWIP_ASP_LINUX
 	prxdesc->RDES0_f.OWN = 1;
 #endif
 	return;
@@ -499,7 +524,7 @@ void eth_output(void *payload, u16_t len)
 void eth_output_zerocopy(struct netif *netif, struct pbuf *p)
 {
 	pbuf_ref(p);
-	eth_output_zerocopy_low(struct netif *netif, struct pbuf *p)
+	eth_output_zerocopy_low(netif, p);
 	pbuf_free(p);
 }
 #endif
@@ -510,7 +535,8 @@ void eth_output_end(void)
 	return;
 }
 
-void eth_int(intptr_t exinf)
+//void eth_int(intptr_t exinf)
+void eth_int()
 {
 #ifdef	LWIP_ASP_LINUX
 	struct pbuf *p;
@@ -524,10 +550,12 @@ void eth_int(intptr_t exinf)
 		perror("eth_int: tapif_queue_rx is empty");
 		return;
 	}
-	if (ipsnd_dtq(DTQ_ETH_RX, (void*)p) != ERR_OK) {
+	if (ipsnd_dtq(DTQ_ETH_RX, (intptr_t)((void*)p)) != ERR_OK) {
 		perror("eth_int: DTQ_ETH_RX is full");
-		free(p);
+		pbuf_free(p);
+		return;
 	}
+	perror("eth_int: snd_dtq to DTQ_ETH_RX ");
 #else
 	ETH_IRQHandler(FM3_ETHERNET_MAC0);
 #endif

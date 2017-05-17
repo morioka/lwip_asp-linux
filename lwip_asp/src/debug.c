@@ -25,7 +25,7 @@ void debug_printf(const char *control, ...)	/* 名前がぶつからないよう
 	vsprintf(buf, control, vargs);
 	va_end(vargs);
 
-	serial_wri_dat(TASK_PORTID, (const char_t*)buf, strlen(buf));
+	serial_wri_dat(TASK_PORTID, (const char*)buf, strlen(buf));
 	sig_sem(SEM_DEBUG);
 	#endif
 	return;

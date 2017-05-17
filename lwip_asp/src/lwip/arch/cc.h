@@ -35,6 +35,7 @@
 //#include <stdio.h> /* printf, fflush, FILE */
 #include <stdlib.h> /* abort */
 #include <limits.h>
+#include <sys/time.h> /* if LWIP_TIMEVAL_PRIVATE == 0 */
 
 #include "debug.h"
 #define fflush(a) 

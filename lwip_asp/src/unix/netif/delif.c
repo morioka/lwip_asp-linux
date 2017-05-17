@@ -44,6 +44,7 @@
 #endif /* linux */
 
 #include "lwip/sys.h"
+#include "lwip/timers.h"
 
 
 #define DELIF_INPUT_DROPRATE 0.1
@@ -255,7 +256,11 @@ delif_init(struct netif *netif)
   }
 #ifdef linux
   /*  tapif_init(del->netif);*/
+#ifdef LWIP_ASP_LINUX
+  tapif_init(del->netif); // why tupif_init() called?
+#else
   tunif_init(del->netif);
+#endif
 #else /* linux */
   tunif_init(del->netif);
 #endif /* linux */
