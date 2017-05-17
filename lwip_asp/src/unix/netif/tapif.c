@@ -540,6 +540,7 @@ void eth_int()
 {
 #ifdef	LWIP_ASP_LINUX
 	struct pbuf *p;
+	ER ercd;
 
 	if (tapif_queue_rx == NULL) {
 		perror("eth_int: tapif_queue_rx is NULL");
@@ -550,7 +551,8 @@ void eth_int()
 		perror("eth_int: tapif_queue_rx is empty");
 		return;
 	}
-	if (ipsnd_dtq(DTQ_ETH_RX, (intptr_t)((void*)p)) != ERR_OK) {
+	ercd = ipsnd_dtq(DTQ_ETH_RX, (intptr_t)((void*)p));
+	if (ercd != E_OK) {
 		perror("eth_int: DTQ_ETH_RX is full");
 		pbuf_free(p);
 		return;
