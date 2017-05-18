@@ -288,7 +288,7 @@ low_level_input(struct tapif *tapif)
 #endif
 
 #ifdef LWIP_ASP_LINUX
-  if (((rxdesc_rp+1) % RXDESC_NUM) != rxdesc_wp) {
+  if (((rxdesc_wp+1) % RXDESC_NUM) != rxdesc_rp) {
     memcpy( rxdesc_buf[rxdesc_wp].buf, buf, len);
     rxdesc_buf[rxdesc_wp].len = len;
     rxdesc_wp = (rxdesc_wp + 1) % RXDESC_NUM;
