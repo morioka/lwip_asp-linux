@@ -93,16 +93,27 @@ static void tapif_thread(void *data);
 
 #ifdef	LWIP_ASP_LINUX
 
-#include <netif/list.h>
 #include <pthread.h>
 #include <signal.h>
 
-#define	TAPIF_QUEUE_SIZE 10
-
-static struct list *tapif_queue_rx = NULL;
 static pthread_t main_thread = 0;
 
 #define	INT_ETH_RECV	27	/* temporaliry value */
+
+#define	RXDESC_NUM 4
+
+typedef struct {
+    u16_t len;
+    void* buf;
+} EMAC_DMA_RXDESC;
+
+static EMAC_DMA_RXDESC rxdesc_buf[RXDESC_NUM];
+static char rx_buf[RXDESC_NUM][2048];
+
+
+static u16_t rxdesc_rp = 0;
+static u16_t rxdesc_wp = 0;
+
 #endif
 
 /*-----------------------------------------------------------------------------------*/
@@ -116,6 +127,9 @@ low_level_init(struct netif *netif)
 {
   struct tapif *tapif;
   char buf[sizeof(IFCONFIG_ARGS) + sizeof(IFCONFIG_BIN) + 50];
+#ifdef	LWIP_ASP_LINUX
+  int i;
+#endif
 
   tapif = (struct tapif *)netif->state;
 
@@ -163,11 +177,13 @@ low_level_init(struct netif *netif)
   LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_init: system(\"%s\");\n", buf));
   system(buf);
 #ifdef	LWIP_ASP_LINUX
-  tapif_queue_rx = list_new(TAPIF_QUEUE_SIZE);
-  if (tapif_queue_rx == NULL) {
-    perror("tapif_init: cannot create tapif_queue_rx");
-    exit(1);
+  memset(rxdesc_buf, 0, sizeof(EMAC_DMA_RXDESC) * RXDESC_NUM);
+  for (i = 0; i < RXDESC_NUM; i++) {
+    rxdesc_buf[i].buf = rx_buf[i];
   }
+  rxdesc_rp = 0;
+  rxdesc_wp = 0;
+
   if (pthread_create(&main_thread, NULL, (void *(*)(void *))tapif_thread, netif) != 0) {
     perror("tapif_init: cannot create tapif_thread");
     exit(1);
@@ -189,7 +205,7 @@ low_level_init(struct netif *netif)
 /*-----------------------------------------------------------------------------------*/
 #ifdef	LWIP_ASP_LINUX
 static err_t
-eth_output_zerocopy_low(struct netif *netif, struct pbuf *p)
+eth_output_netif_low(struct netif *netif, struct pbuf *p)
 #else
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
@@ -211,7 +227,12 @@ low_level_output(struct netif *netif, struct pbuf *p)
 
   bufptr = &buf[0];
 
+#ifdef LWIP_ASP_LINUX
+  q = p;	// pbuf-chain already extracted in upper layer.
+  {
+#else
   for(q = p; q != NULL; q = q->next) {
+#endif
     /* Send the data from the pbuf to the interface, one pbuf at a
        time. The size of the data in each pbuf is kept in the ->len
        variable. */
@@ -221,7 +242,11 @@ low_level_output(struct netif *netif, struct pbuf *p)
   }
 
   /* signal that packet should be sent(); */
+#ifdef LWIP_ASP_LINUX
+  if(write(tapif->fd, buf, q->len) == -1) {
+#else
   if(write(tapif->fd, buf, p->tot_len) == -1) {
+#endif
     perror("tapif: write");
   }
   return ERR_OK;
@@ -236,17 +261,21 @@ low_level_output(struct netif *netif, struct pbuf *p)
  */
 /*-----------------------------------------------------------------------------------*/
 #ifdef	LWIP_ASP_LINUX
-static struct pbuf *
+static err_t
 tapif_input_low(struct tapif *tapif)
 #else
 static struct pbuf *
 low_level_input(struct tapif *tapif)
 #endif
 {
+#ifndef LWIP_ASP_LINUX
   struct pbuf *p, *q;
+#endif
   u16_t len;
   char buf[1514];
+#ifndef LWIP_ASP_LINUX
   char *bufptr;
+#endif
 
   /* Obtain the size of the packet and put it into the "len"
      variable. */
@@ -258,6 +287,16 @@ low_level_input(struct tapif *tapif)
     }
 #endif
 
+#ifdef LWIP_ASP_LINUX
+  if (((rxdesc_rp+1) % RXDESC_NUM) != rxdesc_wp) {
+    memcpy( rxdesc_buf[rxdesc_wp].buf, buf, len);
+    rxdesc_buf[rxdesc_wp].len = len;
+    rxdesc_wp = (rxdesc_wp + 1) % RXDESC_NUM;
+  } else {
+    // drop?
+  }
+  return ERR_OK;
+#else
   /* We allocate a pbuf chain of pbufs from the pool. */
   p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
@@ -279,6 +318,7 @@ low_level_input(struct tapif *tapif)
   }
 
   return p;
+#endif
 }
 /*-----------------------------------------------------------------------------------*/
 static void
@@ -322,17 +362,22 @@ static void
 tapif_input(struct netif *netif)
 {
   struct tapif *tapif;
+#ifndef LWIP_ASP_LINUX
   struct eth_hdr *ethhdr;
   struct pbuf *p;
-
+#endif
 
   tapif = (struct tapif *)netif->state;
 
 #ifdef	LWIP_ASP_LINUX
-  p = tapif_input_low(tapif);
+  if (tapif_input_low(tapif) != ERR_OK) {
+    LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: tapif_input_low returned NULL\n"));
+    return;
+  } else {
+    pthread_kill(main_thread, INT_ETH_RECV);
+  }
 #else
   p = low_level_input(tapif);
-#endif
 
   if(p == NULL) {
     LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: low_level_input returned NULL\n"));
@@ -350,23 +395,17 @@ tapif_input(struct netif *netif)
   case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
     /* full packet send to tcpip_thread to process */
-#ifdef	LWIP_ASP_LINUX
-    if (list_push(tapif_queue_rx, p) == 0) {
-#else
     if (netif->input(p, netif) != ERR_OK) {
-#endif
       LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
        pbuf_free(p);
        p = NULL;
     }
-#ifdef	LWIP_ASP_LINUX
-    pthread_kill(main_thread, INT_ETH_RECV);
-#endif
     break;
   default:
     pbuf_free(p);
     break;
   }
+#endif
 }
 /*-----------------------------------------------------------------------------------*/
 /*
@@ -442,10 +481,9 @@ void eth_init(u8_t *hwaddr)
 #endif
 }
 
-#ifndef	LWIP_ASP_LINUX
+
 static EMAC_DMA_RXDESC *prxdesc;
 static char *ethp;
-#endif
 
 int eth_input_len(void)
 {
@@ -459,36 +497,34 @@ int eth_input_len(void)
 		len = prxdesc->RDES0_f.FL;
 		ethp = (char *)prxdesc->RDES2;
 	}
+#else
+	prxdesc = NULL;
+	if (rxdesc_rp != rxdesc_wp) {
+		prxdesc = &rxdesc_buf[rxdesc_rp];
+		len = prxdesc->len;
+		ethp = (char *)prxdesc->buf;
+	}
 #endif
 	return len;
 }
 
 u16_t eth_input_buf(void *payload, u16_t len)
 {
-#ifndef	LWIP_ASP_LINUX
 	if(len)
 	{
 		memcpy(payload, ethp, len);
 		ethp += len;
 		len -= len;
 	}
-#endif
 	return len;
 }
 
 #ifdef	LWIP_ASP_LINUX
-struct pbuf* eth_input_buf_zerocopy()
+u16_t eth_input_buf_netif(struct netif *netif, struct pbuf *p)
 {
-	struct pbuf *p = NULL;
-	ER ercd;
+	netif = netif;
 
-//	ercd = rcv_dtq(DTQ_ETH_RX, (VP_INT*) &p);
-	ercd = rcv_dtq(DTQ_ETH_RX, (intptr_t*) &p);
-	if (ercd != E_OK) {
-		p = NULL;
-	}
-
-	return p;
+	return eth_input_buf(p->payload, p->len);
 }
 #endif
 
@@ -496,6 +532,10 @@ void eth_input_ack(void)
 {
 #ifndef	LWIP_ASP_LINUX
 	prxdesc->RDES0_f.OWN = 1;
+#else
+	prxdesc->len = 0; // clear
+	ethp = NULL;
+	rxdesc_rp = (rxdesc_rp + 1) % RXDESC_NUM; // rp goes next
 #endif
 	return;
 }
@@ -516,15 +556,17 @@ void eth_output(void *payload, u16_t len)
 {
 #ifndef	LWIP_ASP_LINUX
 	Packet_Send((unsigned char *)payload, (unsigned int)len);
+#else
+        perror("eth_output: use eth_output_netif, instead of eth_output.");
 #endif
 	return;
 }
 
 #ifdef	LWIP_ASP_LINUX
-void eth_output_zerocopy(struct netif *netif, struct pbuf *p)
+void eth_output_netif(struct netif *netif, struct pbuf *p)
 {
 	pbuf_ref(p);
-	eth_output_zerocopy_low(netif, p);
+	eth_output_netif_low(netif, p);
 	pbuf_free(p);
 }
 #endif
@@ -538,27 +580,7 @@ void eth_output_end(void)
 //void eth_int(intptr_t exinf)
 void eth_int()
 {
-#ifdef	LWIP_ASP_LINUX
-	struct pbuf *p;
-	ER ercd;
-
-	if (tapif_queue_rx == NULL) {
-		perror("eth_int: tapif_queue_rx is NULL");
-		return;
-	}
-	p = list_pop(tapif_queue_rx);
-	if (p == NULL) {
-		perror("eth_int: tapif_queue_rx is empty");
-		return;
-	}
-	ercd = ipsnd_dtq(DTQ_ETH_RX, (intptr_t)((void*)p));
-	if (ercd != E_OK) {
-		perror("eth_int: DTQ_ETH_RX is full");
-		pbuf_free(p);
-		return;
-	}
-	perror("eth_int: snd_dtq to DTQ_ETH_RX ");
-#else
+#ifndef LWIP_ASP_LINUX
 	ETH_IRQHandler(FM3_ETHERNET_MAC0);
 #endif
 	isig_sem(SEM_RECV);

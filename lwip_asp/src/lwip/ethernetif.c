@@ -157,8 +157,8 @@ low_level_output(struct netif *netif, struct pbuf *p)
 #if 0
     send data from(q->payload, q->len);
 #else
-#ifdef	LWIP_ASP_LINUX	// ZEROCOPY_TX
-    eth_output_zerocopy(netif, q);
+#ifdef	LWIP_ASP_LINUX
+    eth_output_netif(netif, q);
 #else
     eth_output(q->payload, q->len);
 #endif
@@ -208,16 +208,9 @@ low_level_input(struct netif *netif)
 #if ETH_PAD_SIZE
   len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
 #endif
-#ifdef LWIP_ASP_LINUX
-  len = len;
-#endif
 
   /* We allocate a pbuf chain of pbufs from the pool. */
-#ifdef	LWIP_ASP_LINUX	// ZEROCOPY_RX
-  p = eth_input_buf_zerocopy();
-#else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
-#endif
   
   if (p != NULL) {
 
@@ -239,7 +232,11 @@ low_level_input(struct netif *netif)
 #if 0
       read data into(q->payload, q->len);
 #else
+#ifdef LWIP_ASP_LINUX
+      len = eth_input_buf_netif(netif, q);
+#else
       len = eth_input_buf(q->payload, q->len);
+#endif
 #endif
     }
 #if 0

@@ -1,4 +1,4 @@
-#if 0
+#ifndef LWIP_ASP_LINUX
 extern void eth_init(u8_t *hwaddr); 
 #else
 extern void eth_init(struct netif *netif);
@@ -11,7 +11,7 @@ extern void eth_output_start(void);
 extern void eth_output(void *payload, u16_t len);
 extern void eth_output_end(void);
 
-#if 1
-extern struct pbuf * eth_input_buf_zerocopy();
-extern void eth_output_zerocopy(struct netif *netif, struct pbuf *p);
+#ifdef LWIP_ASP_LINUX
+extern u16_t eth_input_buf_netif(struct netif *netif, struct pbuf *p);
+extern void eth_output_netif(struct netif *netif, struct pbuf *p);
 #endif

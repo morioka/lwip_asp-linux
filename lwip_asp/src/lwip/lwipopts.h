@@ -1,4 +1,15 @@
-//#define MEM_ALIGNMENT				4
+#include "proj/unixsim/lwipopts.h"
+
+#undef MEM_ALIGNMENT
+#undef TCPIP_THREAD_STACKSIZE
+#undef DEFAULT_THREAD_STACKSIZE
+#undef TCPIP_MBOX_SIZE
+#undef DEFAULT_ACCEPTMBOX_SIZE
+#undef DEFAULT_THREAD_PRIO
+
+//
+
+#define MEM_ALIGNMENT				4
 
 #define TCPIP_THREAD_STACKSIZE		(1024*4)
 #define DEFAULT_THREAD_STACKSIZE	(1024*4)
@@ -8,5 +19,3 @@
 
 #define DEFAULT_THREAD_PRIO			2
 
-///////////////////////////////////////////////////////////////
-#include "proj/unixsim/lwipopts.h"
