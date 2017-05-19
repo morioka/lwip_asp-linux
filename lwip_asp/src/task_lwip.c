@@ -10,7 +10,7 @@ extern void  ethernetif_input(struct netif *netif);
 
 void task_lwip(intptr_t exinf)
 {
-	struct ip_addr xIpAddr, xNetMast, xGateway;
+	struct ip_addr xIpAddr, xNetMask, xGateway;
 	struct netif EMAC_if;
 	extern err_t ethernetif_init( struct netif *netif );
 
@@ -20,10 +20,16 @@ void task_lwip(intptr_t exinf)
 	tcpip_init( NULL, NULL );
 
 	/* Create and configure the EMAC interface. */
+#if 1
+	IP4_ADDR(&xIpAddr, 192, 168, 0, 2);
+	IP4_ADDR(&xNetMask, 255, 255, 255 ,0);
+	IP4_ADDR(&xGateway, 192, 168, 0, 1);
+#else
 	IP4_ADDR(&xIpAddr, 192, 168, 1, 150);
-	IP4_ADDR(&xNetMast, 255, 255, 255 ,0);
+	IP4_ADDR(&xNetMask, 255, 255, 255 ,0);
 	IP4_ADDR(&xGateway, 192, 168, 1, 1);
-	netif_add(&EMAC_if, &xIpAddr, &xNetMast, &xGateway, NULL, ethernetif_init, tcpip_input);
+#endif
+	netif_add(&EMAC_if, &xIpAddr, &xNetMask, &xGateway, NULL, ethernetif_init, tcpip_input);
 
 	/* make it the default interface */
 	netif_set_default(&EMAC_if);

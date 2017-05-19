@@ -96,7 +96,8 @@ static void tapif_thread(void *data);
 #include <pthread.h>
 #include <signal.h>
 
-static pthread_t main_thread = 0;
+static pthread_t h_main_thread = 0;
+static pthread_t h_tapif_thread = 0;
 
 #define	INT_ETH_RECV	27	/* temporaliry value */
 
@@ -184,7 +185,9 @@ low_level_init(struct netif *netif)
   rxdesc_rp = 0;
   rxdesc_wp = 0;
 
-  if (pthread_create(&main_thread, NULL, (void *(*)(void *))tapif_thread, netif) != 0) {
+  h_main_thread = pthread_self();
+
+  if (pthread_create(&h_tapif_thread, NULL, (void *(*)(void *))tapif_thread, netif) != 0) {
     perror("tapif_init: cannot create tapif_thread");
     exit(1);
   }
@@ -374,7 +377,7 @@ tapif_input(struct netif *netif)
     LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: tapif_input_low returned NULL\n"));
     return;
   } else {
-    pthread_kill(main_thread, INT_ETH_RECV);
+    pthread_kill(h_main_thread, INT_ETH_RECV);
   }
 #else
   p = low_level_input(tapif);
@@ -426,8 +429,8 @@ tapif_init(struct netif *netif)
   if (!tapif) {
     return ERR_MEM;
   }
-#ifndef LWIP_ASP_LINUX
   netif->state = tapif;
+#ifndef LWIP_ASP_LINUX
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;
   netif->output = etharp_output;
@@ -439,8 +442,8 @@ tapif_init(struct netif *netif)
 
   tapif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
 
-#ifndef LWIP_ASP_LINUX
   netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
+#ifndef LWIP_ASP_LINUX
 
   low_level_init(netif);
 #endif
@@ -580,8 +583,10 @@ void eth_output_end(void)
 //void eth_int(intptr_t exinf)
 void eth_int()
 {
+//	i_begin_int(INT_ETH_RECV);
 #ifndef LWIP_ASP_LINUX
 	ETH_IRQHandler(FM3_ETHERNET_MAC0);
 #endif
 	isig_sem(SEM_RECV);
+//	i_end_int(INT_ETH_RECV);
 }
