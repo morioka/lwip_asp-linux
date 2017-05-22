@@ -1,6 +1,6 @@
 #include "target_test.h"
 
-#define INT_ETH_RECV 27
+#define INT_ETH_RECV 7	/* SIGBUS */
 
 //extern void eth_int(intptr_t exinf);
 extern void eth_int();

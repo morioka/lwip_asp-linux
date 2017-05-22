@@ -99,7 +99,7 @@ static void tapif_thread(void *data);
 static pthread_t h_main_thread = 0;
 static pthread_t h_tapif_thread = 0;
 
-#define	INT_ETH_RECV	27	/* temporaliry value */
+#define	INT_ETH_RECV	7	/* SIGBUS */
 
 #define	RXDESC_NUM 4
 
@@ -536,9 +536,12 @@ void eth_input_ack(void)
 #ifndef	LWIP_ASP_LINUX
 	prxdesc->RDES0_f.OWN = 1;
 #else
-	prxdesc->len = 0; // clear
-	ethp = NULL;
-	rxdesc_rp = (rxdesc_rp + 1) % RXDESC_NUM; // rp goes next
+	if (prxdesc) {
+		prxdesc->len = 0; // clear
+		prxdesc = NULL;
+		ethp = NULL;
+		rxdesc_rp = (rxdesc_rp + 1) % RXDESC_NUM; // rp goes next
+	}
 #endif
 	return;
 }
