@@ -99,7 +99,7 @@ static void tapif_thread(void *data);
 static pthread_t h_main_thread = 0;
 static pthread_t h_tapif_thread = 0;
 
-#define	INT_ETH_RECV	7	/* SIGBUS */
+//#define	INT_ETH_RECV	7	/* SIGBUS */
 
 #define	RXDESC_NUM 4
 
@@ -114,6 +114,8 @@ static char rx_buf[RXDESC_NUM][2048];
 
 static u16_t rxdesc_rp = 0;
 static u16_t rxdesc_wp = 0;
+
+#include "kernel_cfg.h"
 
 #endif
 
@@ -186,6 +188,8 @@ low_level_init(struct netif *netif)
   rxdesc_wp = 0;
 
   h_main_thread = pthread_self();
+
+  sta_cyc(INT_ETH_RECV);
 
   if (pthread_create(&h_tapif_thread, NULL, (void *(*)(void *))tapif_thread, netif) != 0) {
     perror("tapif_init: cannot create tapif_thread");
@@ -377,7 +381,7 @@ tapif_input(struct netif *netif)
     LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: tapif_input_low returned NULL\n"));
     return;
   } else {
-    pthread_kill(h_main_thread, INT_ETH_RECV);
+//    pthread_kill(h_main_thread, INT_ETH_RECV);
   }
 #else
   p = low_level_input(tapif);
@@ -583,13 +587,12 @@ void eth_output_end(void)
 	return;
 }
 
-//void eth_int(intptr_t exinf)
-void eth_int()
+void eth_int(intptr_t exinf)
 {
-//	i_begin_int(INT_ETH_RECV);
 #ifndef LWIP_ASP_LINUX
 	ETH_IRQHandler(FM3_ETHERNET_MAC0);
+#else
+	if (rxdesc_rp != rxdesc_wp) 
 #endif
 	isig_sem(SEM_RECV);
-//	i_end_int(INT_ETH_RECV);
 }
