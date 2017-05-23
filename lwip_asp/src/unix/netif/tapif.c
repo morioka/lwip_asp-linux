@@ -96,10 +96,7 @@ static void tapif_thread(void *data);
 #include <pthread.h>
 #include <signal.h>
 
-static pthread_t h_main_thread = 0;
 static pthread_t h_tapif_thread = 0;
-
-//#define	INT_ETH_RECV	7	/* SIGBUS */
 
 #define	RXDESC_NUM 4
 
@@ -186,8 +183,6 @@ low_level_init(struct netif *netif)
   }
   rxdesc_rp = 0;
   rxdesc_wp = 0;
-
-  h_main_thread = pthread_self();
 
   sta_cyc(INT_ETH_RECV);
 
@@ -380,8 +375,6 @@ tapif_input(struct netif *netif)
   if (tapif_input_low(tapif) != ERR_OK) {
     LWIP_DEBUGF(TAPIF_DEBUG, ("tapif_input: tapif_input_low returned NULL\n"));
     return;
-  } else {
-//    pthread_kill(h_main_thread, INT_ETH_RECV);
   }
 #else
   p = low_level_input(tapif);
