@@ -138,13 +138,13 @@ CFG2_OUT_SRCS := kernel_cfg.h kernel_cfg.c $(CFG2_OUT_SRCS)
 #
 COPTS := $(COPTS) -g 
 ifndef OMIT_WARNING_ALL
-  COPTS := $(COPTS) -Wall
+#  COPTS := $(COPTS) -Wall
 endif
 ifndef OMIT_OPTIMIZATION
   COPTS := $(COPTS) -O2
 endif
-#CDEFS := $(CDEFS) -pthread -DLWIP_ASP_LINUX -DIPv4 -DLWIP_DEBUG -Dlinux -DSIO_PORTID=1 
-CDEFS := $(CDEFS) -pthread -DLWIP_ASP_LINUX -DIPv4 -Dlinux -DSIO_PORTID=1 
+CDEFS := $(CDEFS) -pthread -DLWIP_ASP_LINUX -DIPv4 -DLWIP_DEBUG -Dlinux -DSIO_PORTID=1 
+#CDEFS := $(CDEFS) -pthread -DLWIP_ASP_LINUX -DIPv4 -Dlinux -DSIO_PORTID=1 
 INCLUDES := -I. -I$(SRCDIR)/include -I$(SRCDIR)/arch -I$(SRCDIR) $(INCLUDES)
 LDFLAGS := $(LDFLAGS) 
 CFG1_OUT_LDFLAGS := $(CFG1_OUT_LDFLAGS) 
@@ -254,8 +254,9 @@ endif
 APPL_COBJS := $(APPL_COBJS) log_output.o vasyslog.o t_perror.o strerror.o
 APPL_CFLAGS = \
 	-DTASK_PORTID=SIO_PORTID \
-	-DUSE_DEBUG_PRINTF\
 	-DBYTE_ORDER=LITTLE_ENDIAN \
+
+#	-DUSE_DEBUG_PRINTF\
 
 APPL_LIBS = \
 	-lc \

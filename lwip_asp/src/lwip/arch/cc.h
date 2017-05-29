@@ -32,7 +32,7 @@
 #ifndef __ARCH_CC_H__
 #define __ARCH_CC_H__
 
-//#include <stdio.h> /* printf, fflush, FILE */
+#include <stdio.h> /* printf, fflush, FILE */
 #include <stdlib.h> /* abort */
 #include <limits.h>
 #include <sys/time.h> /* if LWIP_TIMEVAL_PRIVATE == 0 */

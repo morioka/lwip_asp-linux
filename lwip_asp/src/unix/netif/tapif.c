@@ -457,7 +457,7 @@ tapif_init(struct netif *netif)
 #include "kernel_cfg.h"
 
 #include "arch/cc.h"
-#include "debug.h"
+//#include "debug.h"
 #include "eth_api.h"
 
 #include <string.h>

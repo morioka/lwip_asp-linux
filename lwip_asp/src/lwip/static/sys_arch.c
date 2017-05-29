@@ -176,21 +176,21 @@ void sys_mbox_free(sys_mbox_t *mbox)
 
 void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
-	printf("sys_mbox_post in %d, 0x%08x\n", (*mbox)->id, msg);
+	printf("sys_mbox_post in %d, 0x%08x\n", (*mbox)->id, (unsigned int)msg);
 	snd_dtq((*mbox)->id, (intptr_t)msg);
-	printf("sys_mbox_post out %d, 0x%08x\n", (*mbox)->id, msg);
+	printf("sys_mbox_post out %d, 0x%08x\n", (*mbox)->id, (unsigned int)msg);
 }
 
 err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
 	err_t ret = ERR_VAL;
 
-	printf("sys_mbox_trypost in %d, 0x%08x\n", (*mbox)->id, msg);
+	printf("sys_mbox_trypost in %d, 0x%08x\n", (*mbox)->id, (unsigned int)msg);
 	if(E_OK == psnd_dtq((*mbox)->id, (intptr_t)msg))
 	{
 		ret = ERR_OK;
 	}
-	printf("sys_mbox_trypost out %d, 0x%08x, %d\n", (*mbox)->id, msg, ret);
+	printf("sys_mbox_trypost out %d, 0x%08x, %d\n", (*mbox)->id, (unsigned int)msg, ret);
 	return ret;
 }
 
@@ -225,7 +225,7 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 	printf("sys_arch_mbox_tryfetch in %d\n", (*mbox)->id);
 	if(E_OK == prcv_dtq((*mbox)->id, (intptr_t *)msg))
 	{
-		printf("sys_arch_mbox_tryfetch out %d, 0x%08x, ERR_OK\n", (*mbox)->id, *msg);
+		printf("sys_arch_mbox_tryfetch out %d, 0x%08x, ERR_OK\n", (*mbox)->id, (unsigned int)(*msg));
 		return (u32_t)ERR_OK;
 	}
 	printf("sys_arch_mbox_tryfetch out %d, SYS_MBOX_EMPTY\n", (*mbox)->id);
