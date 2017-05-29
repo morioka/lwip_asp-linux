@@ -41,6 +41,7 @@
 #include <sys/uio.h>
 #include <sys/socket.h>
 
+#include "debug.h"
 
 #include "lwip/debug.h"
 

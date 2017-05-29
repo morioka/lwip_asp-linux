@@ -32,7 +32,9 @@
 #ifndef __ARCH_CC_H__
 #define __ARCH_CC_H__
 
+#ifndef	USE_DEBUG_PRINTF
 #include <stdio.h> /* printf, fflush, FILE */
+#endif
 #include <stdlib.h> /* abort */
 #include <limits.h>
 #include <sys/time.h> /* if LWIP_TIMEVAL_PRIVATE == 0 */
@@ -88,6 +90,19 @@ typedef u32_t sys_prot_t;
 #define PACK_STRUCT_USE_INCLUDES
 
 /* Plaform specific diagnostic output */
+#if defined(LWIP_ASP_LINUX) && defined(USE_DEBUG_PRINTF)
+
+#define LWIP_PLATFORM_DIAG(x)   do { debug_printf x; } while(0)
+
+#define LWIP_PLATFORM_ASSERT(x) do { debug_printf("Assertion \"%s\" failed at line %d in %s\n", \
+                                     x, __LINE__, __FILE__); fflush(NULL); abort(); } while(0)
+
+#define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
+  debug_printf("Assertion \"%s\" failed at line %d in %s\n", message, __LINE__, __FILE__); \
+  fflush(NULL);handler;} } while(0)
+
+#else	/* ! (defined(LWIP_ASP_LINUX) && defined(USE_DEBUG_PRINTF)) */
+
 #define LWIP_PLATFORM_DIAG(x)   do { printf x; } while(0)
 
 #define LWIP_PLATFORM_ASSERT(x) do { printf("Assertion \"%s\" failed at line %d in %s\n", \
@@ -96,6 +111,8 @@ typedef u32_t sys_prot_t;
 #define LWIP_ERROR(message, expression, handler) do { if (!(expression)) { \
   printf("Assertion \"%s\" failed at line %d in %s\n", message, __LINE__, __FILE__); \
   fflush(NULL);handler;} } while(0)
+
+#endif	/* defined(LWIP_ASP_LINUX) && defined(USE_DEBUG_PRINTF) */
 
 #ifdef _MSC_VER
 /* C runtime functions redefined */
